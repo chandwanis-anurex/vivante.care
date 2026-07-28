@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    /* Design system mandates squared corners everywhere by default */
+    border-radius: 0;
+  }
+
+  html,
+  body {
+    @apply font-sans text-charcoal bg-white;
+  }
+
+  :focus-visible {
+    outline: 2px solid theme('colors.teal');
+    outline-offset: 2px;
+  }
+}
