@@ -115,6 +115,9 @@ export interface AssignRequest {
   // Stored terminal state; a 'pending' request past expiresAt reads as
   // expired at read time — see getEffectiveStatus in lib/matching.ts.
   status: AssignRequestStatus;
+  // Set when respondToAssignRequest fires — powers a real "time to fill"
+  // metric instead of a fabricated one (see lib/dashboardMetrics.ts).
+  respondedAt?: string;
 }
 
 export interface AppNotification {
@@ -124,6 +127,10 @@ export interface AppNotification {
   createdAt: string;
   read: boolean;
   link?: string;
+  // Everything created today is staffing-related — compliance/finance/
+  // system notifications don't exist yet, so those groupings render with
+  // a real empty state rather than fabricated content.
+  category?: 'staffing' | 'compliance' | 'finance' | 'system';
 }
 
 export type OrgType =

@@ -30,7 +30,7 @@ export function LoginPage() {
       name: selected === 'org' ? 'Jordan Alvarez' : 'Taylor Brooks',
       orgName: selected === 'org' ? orgName : undefined,
     });
-    navigate(selected === 'org' ? '/org/requirements' : '/worker/passport');
+    navigate(selected === 'org' ? '/org/vivanteiq' : '/worker/passport');
   }
 
   return (

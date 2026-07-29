@@ -10,7 +10,7 @@ export function RequireRole({ role, children }: { role: UserRole; children: Reac
   if (session.role !== role) {
     const home =
       session.role === 'org'
-        ? '/org/requirements'
+        ? '/org/vivanteiq'
         : session.role === 'worker'
           ? '/worker/passport'
           : '/admin/requirements';

@@ -170,6 +170,7 @@ export function useScheduleStore() {
         createdAt: new Date(now).toISOString(),
         read: false,
         link: '/worker/shifts',
+        category: 'staffing',
       };
       writeState({
         ...current,
@@ -200,11 +201,14 @@ export function useScheduleStore() {
       createdAt: now,
       read: false,
       link: '/org/shifts',
+      category: 'staffing',
     };
 
     writeState({
       ...current,
-      assignRequests: current.assignRequests.map((a) => (a.id === id ? { ...a, status: response } : a)),
+      assignRequests: current.assignRequests.map((a) =>
+        a.id === id ? { ...a, status: response, respondedAt: now } : a
+      ),
       shiftRequests: current.shiftRequests.map((s) =>
         s.id === ar.shiftId
           ? response === 'accepted'
@@ -298,6 +302,7 @@ export function useScheduleStore() {
       createdAt: now,
       read: false,
       link: '/admin/interviews',
+      category: 'staffing',
     };
 
     writeState({
@@ -331,6 +336,7 @@ export function useScheduleStore() {
       createdAt: now,
       read: false,
       link: '/worker/matches',
+      category: 'staffing',
     };
 
     writeState({
@@ -385,6 +391,7 @@ export function useScheduleStore() {
         createdAt: now,
         read: false,
         link: '/worker/matches',
+        category: 'staffing',
       };
 
       writeState({
