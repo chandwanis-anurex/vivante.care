@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSession } from '@/hooks/useSession';
+import { getRoleHome } from '@/lib/roleHome';
 import { NotificationBell } from './NotificationBell';
 
 export function Header() {
@@ -8,6 +9,7 @@ export function Header() {
   const { session, clearSession } = useSession();
 
   const isLandingPage = location.pathname === '/';
+  const logoHref = session ? getRoleHome(session.role) : '/';
 
   function handleLogout() {
     clearSession();
@@ -17,7 +19,7 @@ export function Header() {
   return (
     <header className="border-b border-navy/10 bg-white">
       <div className="pl-10 pr-6 md:pr-12 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center shrink-0">
+        <Link to={logoHref} className="flex items-center shrink-0">
           <img
             src="/images/vivante-care-icon.svg"
             alt="Vivante.Care"

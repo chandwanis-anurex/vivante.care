@@ -4,6 +4,7 @@ import { PageShell } from '@/components/layout/PageShell';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { setSession } from '@/hooks/useSession';
+import { getRoleHome } from '@/lib/roleHome';
 import { ShieldCheck } from 'lucide-react';
 
 // Deliberately not linked from Header/Footer/landing anywhere — the only
@@ -18,7 +19,7 @@ export function AdminLoginPage() {
     e.preventDefault();
     // TODO: replace with real admin auth against apps/server
     setSession({ role: 'admin', name: 'VivanteCare Admin' });
-    navigate('/admin/requirements');
+    navigate(getRoleHome('admin'));
   }
 
   return (

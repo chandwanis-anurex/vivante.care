@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { setSession } from '@/hooks/useSession';
 import { useOrgRegistry } from '@/hooks/useOrgRegistry';
+import { getRoleHome } from '@/lib/roleHome';
 import type { UserRole } from '@/types';
 import { Building2, UserRound } from 'lucide-react';
 
@@ -30,7 +31,7 @@ export function LoginPage() {
       name: selected === 'org' ? 'Jordan Alvarez' : 'Taylor Brooks',
       orgName: selected === 'org' ? orgName : undefined,
     });
-    navigate(selected === 'org' ? '/org/vivanteiq' : '/worker/passport');
+    navigate(getRoleHome(selected));
   }
 
   return (
