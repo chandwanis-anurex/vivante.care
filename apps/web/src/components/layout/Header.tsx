@@ -17,21 +17,17 @@ export function Header() {
   return (
     <header className="border-b border-navy/10 bg-white">
       <div className="pl-10 pr-6 md:pr-12 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-4 shrink-0">
+        <Link to="/" className="flex items-center shrink-0">
           <img
-            src="/images/vivantecare-logo.png"
-            alt="Vivante.Care logo"
-            className="w-[90px] h-[99px] object-contain shrink-0"
+            src="/images/vivante-care-icon.svg"
+            alt="Vivante.Care"
+            className="sm:hidden h-10 w-10 object-contain"
           />
-          <div className="leading-none">
-            <div className="text-[54px] font-extrabold leading-none">
-              <span className="text-teal">Vivante</span>
-              <span className="text-navy">.Care</span>
-            </div>
-            <div className="hidden sm:block text-[14px] font-bold tracking-[2px] text-muted mt-2">
-              HEALTHCARE WORKFORCE INTELLIGENCE
-            </div>
-          </div>
+          <img
+            src="/images/vivante-care-logo.svg"
+            alt="Vivante.Care — Healthcare Workforce Intelligence"
+            className="hidden sm:block h-20 w-auto object-contain"
+          />
         </Link>
 
         <div className="flex items-center gap-3">

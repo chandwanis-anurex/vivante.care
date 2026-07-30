@@ -44,11 +44,11 @@ other pages needed auditing). All border radii are reset to `0` globally in
 
 ### Components touched
 
-- **`Header.tsx`** — logo (`public/images/vivantecare-logo.png`, 90×99px) +
-  "Vivante.Care" wordmark/tagline, pinned flush left with `pl-10` to line up
-  with the hero's `p-10` inset. CTA buttons (See a Demo / Book a Call) +
-  Login on the right. No section-nav links in the bar — those live in the
-  landing page's own utility link row instead.
+- **`Header.tsx`** — official logo lockup (see **Logo assets** below),
+  pinned flush left with `pl-10` to line up with the hero's `p-10` inset.
+  CTA buttons (See a Demo / Book a Call) + Login on the right. No
+  section-nav links in the bar — those live in the landing page's own
+  utility link row instead.
 - **`Footer.tsx`** — dark navy "Our Promise / Our Vision / Contact + QR"
   panel (matches the `.dc.html` footer), replacing the old 5-column link
   footer. Has `id="book-a-call"` so the header CTA scrolls somewhere real.
@@ -66,11 +66,36 @@ other pages needed auditing). All border radii are reset to `0` globally in
 - `#faqs` → dangling on purpose (no FAQ section exists yet; matches the
   source design's own incomplete state — don't "fix" this without asking)
 
+### Logo assets (source of truth: `/logos` at repo root)
+
+The `/logos` folder holds the official brand package (Main/Side/Text-only
+lockups + Fav Icon, each as `.svg`/`.png`/`.jpg`, plus `.ai`/`.eps`/`.pdf`
+source files) — this **supersedes** the earlier Claude Design placeholder
+logo. Colors: "Vivante" is `navy`, ".Care" is `teal` (the original
+hand-coded header text had this backwards — teal Vivante / navy .Care —
+fixed when the real assets were wired in).
+
+Only the SVGs actually referenced by the app are copied into
+`apps/web/public/`; the rest of `/logos` stays as reference/future use:
+
+| File in `public/` | Copied from `/logos` | Used in |
+|---|---|---|
+| `images/vivante-care-logo.svg` | `Vivante.Care_Side Logo.svg` (icon + wordmark + tagline, horizontal) | `Header.tsx`, `sm:` and up |
+| `images/vivante-care-icon.svg` | `Vivante.Care_Fav Icon.svg` (mark only) | `Header.tsx`, below `sm:` (compact) |
+| `favicon.svg`, `favicon.png` | `Vivante.Care_Fav Icon.svg`/`.png` | `index.html` `<link rel="icon">` |
+
+`Main Logo` (stacked) and `Text Only` haven't been wired into any page yet
+— no current layout calls for them, but they're available in `/logos` if
+a future screen needs a vertical lockup or icon-free wordmark. **No
+reversed/white variant exists** — don't drop the colored logo onto the
+navy `Footer.tsx` background as-is (the navy "Vivante" text would
+disappear); that needs a dedicated white asset first.
+
 ### Images (`apps/web/public/images/`)
 
 | File | Used in | Source |
 |---|---|---|
-| `vivantecare-logo.png`, `vivantecare-nurse-banner.jpg` | Header, hero | Claude Design project assets |
+| `vivantecare-nurse-banner.jpg` | hero | Claude Design project assets |
 | `headshot-haas.png` | VivanteHaaS card, round | user-supplied (`HaaS-Portal/images/headshot1.png`; resized from 5.7MB/2400×1792 → ~290KB) |
 | `headshot-passport.jpg` | VivantePassport card, round | user-supplied (`headshot2.jpg`) |
 | `headshot-iq.jpg` | VivanteIQ card, round | user-supplied (`headshot3.jpg`) |
