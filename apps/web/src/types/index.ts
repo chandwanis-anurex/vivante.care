@@ -25,6 +25,67 @@ export interface RequirementMatch {
   matchedAt: string;
 }
 
+export type RequestReason =
+  | 'Open Position'
+  | 'Call-Off'
+  | 'Vacation Coverage'
+  | 'Seasonal Demand'
+  | 'Census Increase'
+  | 'Emergency'
+  | 'New Unit'
+  | 'Leave of Absence'
+  | 'Other';
+
+export type AssignmentType =
+  | 'Per Diem'
+  | 'Temporary'
+  | 'Contract'
+  | 'Travel'
+  | 'Permanent'
+  | 'Float Pool'
+  | 'Rapid Response';
+
+export type ShiftPeriod = 'Day' | 'Evening' | 'Night';
+
+export type RequestPriority = 'Low' | 'Medium' | 'High' | 'Emergency';
+
+export interface RequirementSchedule {
+  startDate: string;
+  endDate: string;
+  shift: ShiftPeriod;
+  hoursPerWeek: string;
+  weekendRequired: boolean;
+  holidayRequired: boolean;
+  overtimeAllowed: boolean;
+}
+
+export interface RequirementQualifications {
+  stateLicense: string;
+  yearsExperience: string;
+  requiredCertifications: string[];
+  requiredSkills: string[];
+  emrExperience?: string;
+  specialtyExperience?: string;
+  language?: string;
+  previousFacilityExperience?: string;
+}
+
+export interface RequirementBudget {
+  maxBillRate: number;
+  estimatedHours: number;
+  priority: RequestPriority;
+}
+
+// Snapshotted at submit time (lib/workforceRequestForecast.ts) so the
+// numbers the org saw on the Budget/AI Review screens match what's
+// stored — not silently recomputed later if inputs elsewhere change.
+export interface RequirementForecast {
+  estimatedMarketRate: number;
+  fillProbabilityPct: number;
+  expectedFillHours: number;
+  suggestions: string[];
+}
+
 export interface Requirement {
   id: string;
   title: string;
@@ -36,6 +97,35 @@ export interface Requirement {
   archived: boolean;
   matches: RequirementMatch[];
   additionalInfoRequested?: string[];
+
+  // Module 3 additions — all optional so the seeded mock requirements
+  // and admin's manual-match bypass (which don't set these) keep
+  // rendering exactly as before.
+  reason?: RequestReason;
+  assignmentType?: AssignmentType;
+  facilityId?: string;
+  departmentId?: string;
+  unit?: string;
+  floor?: string;
+  costCenter?: string;
+  schedule?: RequirementSchedule;
+  qualifications?: RequirementQualifications;
+  budget?: RequirementBudget;
+  forecast?: RequirementForecast;
+  recruiterEmail?: string; // from org.team; undefined = Unassigned
+}
+
+// A saved starting point for the New Workforce Request wizard — user
+// -created, not fabricated, per Module3's "Smart Templates" differentiator.
+export interface RequirementTemplate {
+  id: string;
+  name: string;
+  specialty: string;
+  assignmentType?: AssignmentType;
+  schedule?: Omit<RequirementSchedule, 'startDate' | 'endDate'>;
+  qualifications?: RequirementQualifications;
+  budget?: RequirementBudget;
+  createdAt: string;
 }
 
 export type InterviewRequestStatus = 'pending_admin' | 'sent_to_worker';
@@ -208,4 +298,5 @@ export interface Organization {
   locations: OrgLocation[];
   team: TeamInvite[];
   auditLog: AuditLogEntry[];
+  requestTemplates: RequirementTemplate[];
 }

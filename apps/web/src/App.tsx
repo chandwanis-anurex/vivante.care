@@ -5,7 +5,7 @@ import { RegisterOrgPage } from '@/pages/RegisterOrgPage';
 import { RequireRole } from '@/components/RequireRole';
 
 import { RequirementsPage } from '@/pages/org/RequirementsPage';
-import { NewRequirementPage } from '@/pages/org/NewRequirementPage';
+import { NewWorkforceRequestPage } from '@/pages/org/NewWorkforceRequestPage';
 import { RequirementDetailPage } from '@/pages/org/RequirementDetailPage';
 import { OrgShiftsPage } from '@/pages/org/OrgShiftsPage';
 import { NewShiftPage } from '@/pages/org/NewShiftPage';
@@ -44,7 +44,7 @@ export default function App() {
         path="/org/requirements/new"
         element={
           <RequireRole role="org">
-            <NewRequirementPage />
+            <NewWorkforceRequestPage />
           </RequireRole>
         }
       />

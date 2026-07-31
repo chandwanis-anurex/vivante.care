@@ -7,6 +7,7 @@ import type {
   OrgRole,
   Organization,
   OrgVerificationStatus,
+  RequirementTemplate,
   SubscriptionPlan,
 } from '@/types';
 import { MOCK_ORGS } from '@/lib/orgs';
@@ -47,6 +48,7 @@ function seedState(): RegistryState {
     locations: [],
     team: [],
     auditLog: [{ id: crypto.randomUUID(), action: 'Created organization', actor: 'System', createdAt: now }],
+    requestTemplates: [],
   });
 
   return {
@@ -118,6 +120,7 @@ export function useOrgRegistry() {
         locations: [],
         team: [],
         auditLog: [audit('Created organization')],
+        requestTemplates: [],
       };
       writeState({ organizations: [org, ...current.organizations] });
       return org;
@@ -206,6 +209,32 @@ export function useOrgRegistry() {
     []
   );
 
+  // General-purpose external audit hook — lets other stores/pages (e.g.
+  // the workforce-request wizard) record an action on this org without
+  // reaching into useOrgRegistry's internals.
+  const logAudit = useCallback((orgId: string, action: string) => {
+    const current = readState();
+    writeState({
+      organizations: current.organizations.map((o) =>
+        o.id === orgId ? { ...o, auditLog: [audit(action), ...o.auditLog] } : o
+      ),
+    });
+  }, []);
+
+  const saveRequestTemplate = useCallback(
+    (orgId: string, template: Omit<RequirementTemplate, 'id' | 'createdAt'>) => {
+      const current = readState();
+      const saved: RequirementTemplate = { ...template, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+      writeState({
+        organizations: current.organizations.map((o) =>
+          o.id === orgId ? { ...o, requestTemplates: [saved, ...o.requestTemplates] } : o
+        ),
+      });
+      return saved;
+    },
+    []
+  );
+
   return {
     ...state,
     registerOrganization,
@@ -216,5 +245,7 @@ export function useOrgRegistry() {
     setLocations,
     inviteTeamMember,
     updateOrganizationProfile,
+    logAudit,
+    saveRequestTemplate,
   };
 }

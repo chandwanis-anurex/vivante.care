@@ -46,6 +46,83 @@ export function RequirementDetailPage() {
         <Button variant="outline">Duplicate Requirement</Button>
       </div>
 
+      {(requirement.reason || requirement.schedule || requirement.budget || requirement.forecast) && (
+        <Card accent="neutral" className="mb-6">
+          <div className="text-lg font-bold text-charcoal mb-4">Request Details</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-3 text-sm">
+            {requirement.reason && <DetailRow label="Reason" value={requirement.reason} />}
+            {requirement.assignmentType && <DetailRow label="Assignment Type" value={requirement.assignmentType} />}
+            {requirement.unit && <DetailRow label="Unit" value={requirement.unit} />}
+            {requirement.costCenter && <DetailRow label="Cost Center" value={requirement.costCenter} />}
+            {requirement.schedule && (
+              <>
+                <DetailRow label="Start" value={new Date(requirement.schedule.startDate).toLocaleDateString()} />
+                <DetailRow label="End" value={new Date(requirement.schedule.endDate).toLocaleDateString()} />
+                <DetailRow label="Shift" value={requirement.schedule.shift} />
+                <DetailRow label="Hours" value={requirement.schedule.hoursPerWeek || '—'} />
+              </>
+            )}
+            {requirement.budget && (
+              <>
+                <DetailRow label="Max Bill Rate" value={`$${requirement.budget.maxBillRate}/hr`} />
+                <DetailRow label="Priority" value={requirement.budget.priority} />
+              </>
+            )}
+            {requirement.budget && (
+              <DetailRow label="Recruiter" value={requirement.recruiterEmail || 'Unassigned'} />
+            )}
+          </div>
+
+          {requirement.qualifications &&
+            (requirement.qualifications.requiredCertifications.length > 0 ||
+              requirement.qualifications.requiredSkills.length > 0) && (
+              <div className="mt-4 pt-4 border-t border-charcoal/10 flex flex-wrap gap-6">
+                {requirement.qualifications.requiredCertifications.length > 0 && (
+                  <div>
+                    <div className="text-xs font-bold uppercase text-charcoal/50 mb-1.5">
+                      Required Certifications
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {requirement.qualifications.requiredCertifications.map((c) => (
+                        <Tag key={c}>{c}</Tag>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {requirement.qualifications.requiredSkills.length > 0 && (
+                  <div>
+                    <div className="text-xs font-bold uppercase text-charcoal/50 mb-1.5">Required Skills</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {requirement.qualifications.requiredSkills.map((s) => (
+                        <Tag key={s}>{s}</Tag>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+          {requirement.forecast && (
+            <div className="mt-4 pt-4 border-t border-charcoal/10">
+              <div className="grid grid-cols-3 gap-4 mb-3">
+                <DetailRow label="Market Rate" value={`$${requirement.forecast.estimatedMarketRate}/hr`} />
+                <DetailRow label="Est. Fill Time" value={`${requirement.forecast.expectedFillHours}h`} />
+                <DetailRow label="Fill Likelihood" value={`${requirement.forecast.fillProbabilityPct}%`} />
+              </div>
+              {requirement.forecast.suggestions.length > 0 && (
+                <ul className="space-y-1">
+                  {requirement.forecast.suggestions.map((s) => (
+                    <li key={s} className="text-sm text-charcoal/70">
+                      • {s}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </Card>
+      )}
+
       {requirement.matches.length === 0 ? (
         <Card className="text-center py-16">
           <p className="text-lg text-charcoal/60">
@@ -207,4 +284,17 @@ export function RequirementDetailPage() {
       )}
     </OrgLayout>
   );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs font-bold uppercase text-charcoal/40">{label}</dt>
+      <dd className="font-semibold text-charcoal mt-0.5">{value}</dd>
+    </div>
+  );
+}
+
+function Tag({ children }: { children: string }) {
+  return <span className="text-xs font-semibold bg-teal/10 text-teal px-2 py-1">{children}</span>;
 }

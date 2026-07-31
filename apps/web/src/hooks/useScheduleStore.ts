@@ -231,14 +231,41 @@ export function useScheduleStore() {
   const createRequirement = useCallback(
     (input: Omit<Requirement, 'id' | 'openedAt' | 'archived' | 'matches'>) => {
       const current = readState();
+      const now = new Date().toISOString();
       const requirement: Requirement = {
         ...input,
         id: crypto.randomUUID(),
-        openedAt: new Date().toISOString(),
+        openedAt: now,
         archived: false,
         matches: [],
       };
-      writeState({ ...current, requirements: [requirement, ...current.requirements] });
+      const notifications: AppNotification[] = [
+        {
+          id: crypto.randomUUID(),
+          audience: 'org',
+          message: `Workforce request "${requirement.title}" submitted.`,
+          createdAt: now,
+          read: false,
+          link: `/org/requirements/${requirement.id}`,
+          category: 'staffing',
+        },
+      ];
+      if (input.recruiterEmail) {
+        notifications.push({
+          id: crypto.randomUUID(),
+          audience: 'org',
+          message: `${input.recruiterEmail} was assigned to "${requirement.title}".`,
+          createdAt: now,
+          read: false,
+          link: `/org/requirements/${requirement.id}`,
+          category: 'staffing',
+        });
+      }
+      writeState({
+        ...current,
+        requirements: [requirement, ...current.requirements],
+        notifications: [...notifications, ...current.notifications],
+      });
       return requirement;
     },
     []
