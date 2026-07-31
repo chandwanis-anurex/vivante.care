@@ -6,6 +6,7 @@ import { RequireRole } from '@/components/RequireRole';
 
 import { RequirementsPage } from '@/pages/org/RequirementsPage';
 import { NewWorkforceRequestPage } from '@/pages/org/NewWorkforceRequestPage';
+import { DraftRequestsPage } from '@/pages/org/DraftRequestsPage';
 import { RequirementDetailPage } from '@/pages/org/RequirementDetailPage';
 import { OrgShiftsPage } from '@/pages/org/OrgShiftsPage';
 import { NewShiftPage } from '@/pages/org/NewShiftPage';
@@ -19,6 +20,7 @@ import { WorkerShiftsPage } from '@/pages/worker/WorkerShiftsPage';
 import { WorkerVivanteIQPage } from '@/pages/worker/WorkerVivanteIQPage';
 
 import { AdminLoginPage } from '@/pages/admin/AdminLoginPage';
+import { AdminCommandCenterPage } from '@/pages/admin/AdminCommandCenterPage';
 import { AdminRequirementsPage } from '@/pages/admin/AdminRequirementsPage';
 import { AdminInterviewsPage } from '@/pages/admin/AdminInterviewsPage';
 import { AdminPassportsPage } from '@/pages/admin/AdminPassportsPage';
@@ -45,6 +47,14 @@ export default function App() {
         element={
           <RequireRole role="org">
             <NewWorkforceRequestPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/org/requirements/drafts"
+        element={
+          <RequireRole role="org">
+            <DraftRequestsPage />
           </RequireRole>
         }
       />
@@ -133,6 +143,14 @@ export default function App() {
 
       {/* VivanteCare Admin — deliberately not linked from any nav */}
       <Route path="/admin" element={<AdminLoginPage />} />
+      <Route
+        path="/admin/command-center"
+        element={
+          <RequireRole role="admin">
+            <AdminCommandCenterPage />
+          </RequireRole>
+        }
+      />
       <Route
         path="/admin/requirements"
         element={

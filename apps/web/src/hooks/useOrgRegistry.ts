@@ -2,13 +2,16 @@ import { useCallback, useSyncExternalStore } from 'react';
 import type {
   AuditLogEntry,
   Department,
+  DraftApprovalStatus,
   Facility,
   OrgLocation,
   OrgRole,
   Organization,
   OrgVerificationStatus,
+  RequirementDraft,
   RequirementTemplate,
   SubscriptionPlan,
+  WizardFormSnapshot,
 } from '@/types';
 import { MOCK_ORGS } from '@/lib/orgs';
 import { checkOrgConflicts } from '@/lib/orgRegistration';
@@ -49,6 +52,7 @@ function seedState(): RegistryState {
     team: [],
     auditLog: [{ id: crypto.randomUUID(), action: 'Created organization', actor: 'System', createdAt: now }],
     requestTemplates: [],
+    requestDrafts: [],
   });
 
   return {
@@ -121,6 +125,7 @@ export function useOrgRegistry() {
         team: [],
         auditLog: [audit('Created organization')],
         requestTemplates: [],
+        requestDrafts: [],
       };
       writeState({ organizations: [org, ...current.organizations] });
       return org;
@@ -235,6 +240,143 @@ export function useOrgRegistry() {
     []
   );
 
+  // Module4 — Draft Workforce Requests: save/resume, reviewers, comments,
+  // and version history. updateDraft is the silent 30s-autosave path
+  // (just patches the live snapshot); saveDraftVersion is the explicit,
+  // deliberate checkpoint — kept separate so autosave doesn't flood
+  // version history every 30 seconds.
+  const createDraft = useCallback((orgId: string, form: WizardFormSnapshot, createdBy: string) => {
+    const current = readState();
+    const now = new Date().toISOString();
+    const draft: RequirementDraft = {
+      id: crypto.randomUUID(),
+      orgName: current.organizations.find((o) => o.id === orgId)?.name ?? '',
+      createdBy,
+      title: form.specialty || 'Untitled Request',
+      form,
+      step: 1,
+      reviewers: [],
+      comments: [],
+      versions: [],
+      approvalStatus: 'not_required',
+      createdAt: now,
+      updatedAt: now,
+    };
+    writeState({
+      organizations: current.organizations.map((o) =>
+        o.id === orgId ? { ...o, requestDrafts: [draft, ...o.requestDrafts] } : o
+      ),
+    });
+    return draft;
+  }, []);
+
+  const updateDraft = useCallback(
+    (orgId: string, draftId: string, patch: { form?: WizardFormSnapshot; step?: number }) => {
+      const current = readState();
+      writeState({
+        organizations: current.organizations.map((o) =>
+          o.id === orgId
+            ? {
+                ...o,
+                requestDrafts: o.requestDrafts.map((d) =>
+                  d.id === draftId
+                    ? {
+                        ...d,
+                        ...patch,
+                        title: patch.form?.specialty || d.title,
+                        updatedAt: new Date().toISOString(),
+                      }
+                    : d
+                ),
+              }
+            : o
+        ),
+      });
+    },
+    []
+  );
+
+  const saveDraftVersion = useCallback((orgId: string, draftId: string, label: string, savedBy: string) => {
+    const current = readState();
+    const org = current.organizations.find((o) => o.id === orgId);
+    const draft = org?.requestDrafts.find((d) => d.id === draftId);
+    if (!org || !draft) return;
+
+    const version = { id: crypto.randomUUID(), label, snapshot: draft.form, savedAt: new Date().toISOString(), savedBy };
+    writeState({
+      organizations: current.organizations.map((o) =>
+        o.id === orgId
+          ? {
+              ...o,
+              requestDrafts: o.requestDrafts.map((d) =>
+                d.id === draftId ? { ...d, versions: [version, ...d.versions] } : d
+              ),
+            }
+          : o
+      ),
+    });
+  }, []);
+
+  const addDraftComment = useCallback((orgId: string, draftId: string, author: string, text: string) => {
+    const current = readState();
+    const comment = { id: crypto.randomUUID(), author, text, createdAt: new Date().toISOString() };
+    writeState({
+      organizations: current.organizations.map((o) =>
+        o.id === orgId
+          ? {
+              ...o,
+              requestDrafts: o.requestDrafts.map((d) =>
+                d.id === draftId ? { ...d, comments: [comment, ...d.comments] } : d
+              ),
+            }
+          : o
+      ),
+    });
+  }, []);
+
+  const setDraftReviewers = useCallback((orgId: string, draftId: string, reviewers: string[]) => {
+    const current = readState();
+    writeState({
+      organizations: current.organizations.map((o) =>
+        o.id === orgId
+          ? {
+              ...o,
+              requestDrafts: o.requestDrafts.map((d) =>
+                d.id === draftId
+                  ? {
+                      ...d,
+                      reviewers,
+                      approvalStatus:
+                        reviewers.length > 0 && d.approvalStatus === 'not_required' ? 'pending' : d.approvalStatus,
+                    }
+                  : d
+              ),
+            }
+          : o
+      ),
+    });
+  }, []);
+
+  const setDraftApproval = useCallback((orgId: string, draftId: string, status: DraftApprovalStatus) => {
+    const current = readState();
+    writeState({
+      organizations: current.organizations.map((o) =>
+        o.id === orgId
+          ? { ...o, requestDrafts: o.requestDrafts.map((d) => (d.id === draftId ? { ...d, approvalStatus: status } : d)) }
+          : o
+      ),
+    });
+  }, []);
+
+  const deleteDraft = useCallback((orgId: string, draftId: string) => {
+    const current = readState();
+    writeState({
+      organizations: current.organizations.map((o) =>
+        o.id === orgId ? { ...o, requestDrafts: o.requestDrafts.filter((d) => d.id !== draftId) } : o
+      ),
+    });
+  }, []);
+
   return {
     ...state,
     registerOrganization,
@@ -247,5 +389,12 @@ export function useOrgRegistry() {
     updateOrganizationProfile,
     logAudit,
     saveRequestTemplate,
+    createDraft,
+    updateDraft,
+    saveDraftVersion,
+    addDraftComment,
+    setDraftReviewers,
+    setDraftApproval,
+    deleteDraft,
   };
 }

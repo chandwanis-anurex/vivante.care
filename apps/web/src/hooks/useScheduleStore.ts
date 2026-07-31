@@ -11,7 +11,8 @@ import type {
 } from '@/types';
 import { ASSIGN_REQUEST_TTL_MINUTES } from '@/lib/config';
 import { getEffectiveStatus } from '@/lib/matching';
-import { MOCK_REQUIREMENTS } from '@/lib/mockData';
+import { MOCK_REQUIREMENTS, getVaultWithOwnPassport } from '@/lib/mockData';
+import { computeWorkforceAnalysis, rankCandidatesForRequirement } from '@/lib/candidateMatching';
 
 // Prototype-only cross-role store (localStorage), same pattern as
 // hooks/useSession.ts: org and worker actions both land here so the whole
@@ -238,6 +239,7 @@ export function useScheduleStore() {
         openedAt: now,
         archived: false,
         matches: [],
+        pipelineStatus: 'submitted',
       };
       const notifications: AppNotification[] = [
         {
@@ -247,6 +249,15 @@ export function useScheduleStore() {
           createdAt: now,
           read: false,
           link: `/org/requirements/${requirement.id}`,
+          category: 'staffing',
+        },
+        {
+          id: crypto.randomUUID(),
+          audience: 'admin',
+          message: `New request assigned: "${requirement.title}" (${requirement.orgName}).`,
+          createdAt: now,
+          read: false,
+          link: '/admin/requirements',
           category: 'staffing',
         },
       ];
@@ -398,6 +409,9 @@ export function useScheduleStore() {
         specialty: input.specialty,
         status: 'invited_to_interview',
         matchedAt: now,
+        // Admin picked this candidate directly — already "presented",
+        // unlike an AI-suggested match which starts anonymized.
+        presented: true,
       };
       const interviewRequest: InterviewRequest = {
         id: crypto.randomUUID(),
@@ -434,6 +448,231 @@ export function useScheduleStore() {
     []
   );
 
+  // Module4 — VivanteMatch AI ranking. Deterministic, instant (no fake
+  // "thinking" delay, same convention as Module1's org verification):
+  // scores the real Passport Vault against the requirement and appends
+  // anonymized (presented: false) matches — recruiter (admin) approval
+  // is what makes them visible to the org.
+  const runAiMatching = useCallback((requirementId: string) => {
+    const current = readState();
+    const requirement = current.requirements.find((r) => r.id === requirementId);
+    if (!requirement) return;
+
+    const vault = getVaultWithOwnPassport();
+    const workforceAnalysis = computeWorkforceAnalysis(
+      requirement,
+      vault,
+      current.shiftRequests,
+      current.assignRequests
+    );
+    const existingPassportIds = requirement.matches.map((m) => m.passportId);
+    const ranked = rankCandidatesForRequirement(
+      vault,
+      requirement,
+      current.requirements,
+      current.availabilityRules,
+      existingPassportIds
+    );
+    const now = new Date().toISOString();
+    const newMatches: RequirementMatch[] = ranked.slice(0, 5).map((r) => ({
+      id: crypto.randomUUID(),
+      passportId: r.candidate.id,
+      candidateName: r.candidate.name,
+      specialty: r.candidate.specialty,
+      status: 'open',
+      matchedAt: now,
+      aiMatchScore: r.matchScore.score,
+      aiWhyReasons: r.matchScore.whyReasons,
+      readiness: r.readiness,
+      presented: false,
+    }));
+
+    const notification: AppNotification = {
+      id: crypto.randomUUID(),
+      audience: 'org',
+      message: `AI analysis complete for "${requirement.title}" — ${newMatches.length} candidate${newMatches.length === 1 ? '' : 's'} found.`,
+      createdAt: now,
+      read: false,
+      link: `/org/requirements/${requirementId}`,
+      category: 'staffing',
+    };
+
+    writeState({
+      ...current,
+      requirements: current.requirements.map((r) =>
+        r.id === requirementId
+          ? {
+              ...r,
+              workforceAnalysis,
+              pipelineStatus: newMatches.length > 0 ? 'recruiter_review' : 'finding_candidates',
+              matches: [...newMatches, ...r.matches],
+            }
+          : r
+      ),
+      notifications: [notification, ...current.notifications],
+    });
+    return newMatches;
+  }, []);
+
+  const recruiterApproveMatch = useCallback((requirementId: string, matchId: string) => {
+    const current = readState();
+    const requirement = current.requirements.find((r) => r.id === requirementId);
+    const match = requirement?.matches.find((m) => m.id === matchId);
+    if (!requirement || !match) return;
+
+    const now = new Date().toISOString();
+    const notification: AppNotification = {
+      id: crypto.randomUUID(),
+      audience: 'org',
+      message: `Candidates ready for review on "${requirement.title}".`,
+      createdAt: now,
+      read: false,
+      link: `/org/requirements/${requirementId}`,
+      category: 'staffing',
+    };
+
+    writeState({
+      ...current,
+      requirements: current.requirements.map((r) =>
+        r.id === requirementId
+          ? {
+              ...r,
+              pipelineStatus: 'provider_review',
+              matches: r.matches.map((m) => (m.id === matchId ? { ...m, presented: true } : m)),
+            }
+          : r
+      ),
+      notifications: [notification, ...current.notifications],
+    });
+  }, []);
+
+  const recruiterEscalate = useCallback((requirementId: string, matchId: string) => {
+    const current = readState();
+    writeState({
+      ...current,
+      requirements: current.requirements.map((r) =>
+        r.id === requirementId
+          ? { ...r, matches: r.matches.map((m) => (m.id === matchId ? { ...m, escalated: true } : m)) }
+          : r
+      ),
+    });
+  }, []);
+
+  const recruiterRequestCredentialUpdate = useCallback((requirementId: string, matchId: string) => {
+    const current = readState();
+    const requirement = current.requirements.find((r) => r.id === requirementId);
+    const match = requirement?.matches.find((m) => m.id === matchId);
+    if (!requirement || !match) return;
+
+    const now = new Date().toISOString();
+    const notification: AppNotification = {
+      id: crypto.randomUUID(),
+      audience: 'worker',
+      message: `Please update your certifications/credentials on VivantePassport — requested for "${requirement.title}".`,
+      createdAt: now,
+      read: false,
+      link: '/worker/passport',
+      category: 'staffing',
+    };
+    writeState({ ...current, notifications: [notification, ...current.notifications] });
+  }, []);
+
+  const recruiterSearchAgain = useCallback((requirementId: string) => {
+    const current = readState();
+    const requirement = current.requirements.find((r) => r.id === requirementId);
+    if (!requirement) return;
+
+    const vault = getVaultWithOwnPassport();
+    const existingPassportIds = requirement.matches.map((m) => m.passportId);
+    const ranked = rankCandidatesForRequirement(
+      vault,
+      requirement,
+      current.requirements,
+      current.availabilityRules,
+      existingPassportIds
+    );
+    const now = new Date().toISOString();
+    const newMatches: RequirementMatch[] = ranked.slice(0, 3).map((r) => ({
+      id: crypto.randomUUID(),
+      passportId: r.candidate.id,
+      candidateName: r.candidate.name,
+      specialty: r.candidate.specialty,
+      status: 'open',
+      matchedAt: now,
+      aiMatchScore: r.matchScore.score,
+      aiWhyReasons: r.matchScore.whyReasons,
+      readiness: r.readiness,
+      presented: false,
+    }));
+
+    writeState({
+      ...current,
+      requirements: current.requirements.map((r) =>
+        r.id === requirementId ? { ...r, matches: [...newMatches, ...r.matches] } : r
+      ),
+    });
+    return newMatches;
+  }, []);
+
+  const providerRequestAnotherCandidate = useCallback((requirementId: string) => {
+    const current = readState();
+    const requirement = current.requirements.find((r) => r.id === requirementId);
+    if (!requirement) return;
+
+    const vault = getVaultWithOwnPassport();
+    const existingPassportIds = requirement.matches.map((m) => m.passportId);
+    const ranked = rankCandidatesForRequirement(
+      vault,
+      requirement,
+      current.requirements,
+      current.availabilityRules,
+      existingPassportIds
+    );
+    const now = new Date().toISOString();
+    const newMatches: RequirementMatch[] = ranked.slice(0, 3).map((r) => ({
+      id: crypto.randomUUID(),
+      passportId: r.candidate.id,
+      candidateName: r.candidate.name,
+      specialty: r.candidate.specialty,
+      status: 'open',
+      matchedAt: now,
+      aiMatchScore: r.matchScore.score,
+      aiWhyReasons: r.matchScore.whyReasons,
+      readiness: r.readiness,
+      presented: false,
+    }));
+    const notification: AppNotification = {
+      id: crypto.randomUUID(),
+      audience: 'admin',
+      message: `${requirement.orgName} requested more candidates for "${requirement.title}".`,
+      createdAt: now,
+      read: false,
+      link: '/admin/requirements',
+      category: 'staffing',
+    };
+
+    writeState({
+      ...current,
+      requirements: current.requirements.map((r) =>
+        r.id === requirementId ? { ...r, matches: [...newMatches, ...r.matches] } : r
+      ),
+      notifications: [notification, ...current.notifications],
+    });
+    return newMatches;
+  }, []);
+
+  const providerShortlistMatch = useCallback((requirementId: string, matchId: string) => {
+    const current = readState();
+    writeState({
+      ...current,
+      requirements: current.requirements.map((r) =>
+        r.id === requirementId
+          ? { ...r, matches: r.matches.map((m) => (m.id === matchId ? { ...m, shortlisted: !m.shortlisted } : m)) }
+          : r
+      ),
+    });
+  }, []);
+
   return {
     ...state,
     setAvailabilityRules,
@@ -447,5 +686,12 @@ export function useScheduleStore() {
     createInterviewRequest,
     sendInterviewSlot,
     createManualMatch,
+    runAiMatching,
+    recruiterApproveMatch,
+    recruiterEscalate,
+    recruiterRequestCredentialUpdate,
+    recruiterSearchAgain,
+    providerRequestAnotherCandidate,
+    providerShortlistMatch,
   };
 }

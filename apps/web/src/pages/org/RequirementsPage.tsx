@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useSession } from '@/hooks/useSession';
 import { useScheduleStore } from '@/hooks/useScheduleStore';
-import { Plus, Archive, Users } from 'lucide-react';
+import { Plus, Archive, Users, FileEdit } from 'lucide-react';
 
 export function RequirementsPage() {
   const { session } = useSession();
@@ -34,6 +34,12 @@ export function RequirementsPage() {
             <Archive size={16} />
             {showArchived ? 'View Active' : 'Archived Requirements'}
           </Button>
+          <Link to="/org/requirements/drafts">
+            <Button variant="outline">
+              <FileEdit size={16} />
+              Drafts
+            </Button>
+          </Link>
           <Link to="/org/requirements/new">
             <Button>
               <Plus size={16} />

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 
 const ADMIN_NAV = [
+  { label: 'Command Center', to: '/admin/command-center' },
   { label: 'Requirements', to: '/admin/requirements' },
   { label: 'Interviews', to: '/admin/interviews' },
   { label: 'Passports', to: '/admin/passports' },

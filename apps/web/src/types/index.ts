@@ -16,6 +16,19 @@ export type MatchStatus =
   | 'archived'
   | 'closed';
 
+// Simulated (not real credential-verification data) — Green/Amber/Red per
+// Module4's Candidate Readiness Score, deterministic per passport.
+export interface CandidateReadiness {
+  score: number;
+  license: 'green' | 'amber' | 'red';
+  background: 'green' | 'amber' | 'red';
+  drugScreen: 'green' | 'amber' | 'red';
+  vaccination: 'green' | 'amber' | 'red';
+  availabilityConfirmed: boolean;
+  interestConfirmed: boolean;
+  passportVerified: boolean;
+}
+
 export interface RequirementMatch {
   id: string;
   passportId: string; // e.g. V4471290
@@ -23,6 +36,21 @@ export interface RequirementMatch {
   specialty: string;
   status: MatchStatus;
   matchedAt: string;
+
+  // Module 4 additions — all optional; matches created before this
+  // module (seeded mock data, admin's Create Manual Match bypass) don't
+  // set these and render exactly as before.
+  aiMatchScore?: number;
+  aiWhyReasons?: string[];
+  readiness?: CandidateReadiness;
+  // Only a literal `false` is anonymized (from runAiMatching/Search
+  // Again) — `undefined` defaults to presented so every match created
+  // before Module4 (seeded mock data, admin's Create Manual Match, which
+  // sets this true explicitly) keeps showing full names exactly as
+  // before. Recruiter (admin) approval is what flips false -> true.
+  presented?: boolean;
+  escalated?: boolean;
+  shortlisted?: boolean;
 }
 
 export type RequestReason =
@@ -86,6 +114,25 @@ export interface RequirementForecast {
   suggestions: string[];
 }
 
+export type RequirementPipelineStatus =
+  | 'submitted'
+  | 'ai_analysis'
+  | 'finding_candidates'
+  | 'recruiter_review'
+  | 'provider_review';
+
+// Real fill-time/probability numbers reuse lib/workforceRequestForecast.ts;
+// expectedQualifiedCandidates is a real vault count, not fabricated.
+// recommendedSearchRadiusMiles is an aggregate suggestion (same style as
+// Module3's radius suggestion) — never a per-candidate distance claim.
+export interface WorkforceAnalysis {
+  estimatedFillHours: number;
+  marketAvailability: 'Low' | 'Medium' | 'High';
+  expectedQualifiedCandidates: number;
+  recommendedSearchRadiusMiles: number;
+  successProbabilityPct: number;
+}
+
 export interface Requirement {
   id: string;
   title: string;
@@ -113,6 +160,10 @@ export interface Requirement {
   budget?: RequirementBudget;
   forecast?: RequirementForecast;
   recruiterEmail?: string; // from org.team; undefined = Unassigned
+
+  // Module 4 additions — also optional, same backward-compat reasoning.
+  pipelineStatus?: RequirementPipelineStatus;
+  workforceAnalysis?: WorkforceAnalysis;
 }
 
 // A saved starting point for the New Workforce Request wizard — user
@@ -126,6 +177,76 @@ export interface RequirementTemplate {
   qualifications?: RequirementQualifications;
   budget?: RequirementBudget;
   createdAt: string;
+}
+
+// The full state of pages/org/NewWorkforceRequestPage.tsx's wizard, moved
+// here so hooks/useOrgRegistry.ts's drafts store can share the exact same
+// shape the wizard page reads/writes — Module4's Draft Requests feature.
+export interface WizardFormSnapshot {
+  specialty: string;
+  reason: RequestReason | '';
+  assignmentType: AssignmentType | '';
+  facilityId: string;
+  facilityFreeform: string;
+  departmentId: string;
+  unit: string;
+  floor: string;
+  costCenter: string;
+  startDate: string;
+  endDate: string;
+  shift: ShiftPeriod | '';
+  hoursPerWeek: string;
+  weekendRequired: boolean;
+  holidayRequired: boolean;
+  overtimeAllowed: boolean;
+  stateLicense: string;
+  yearsExperience: string;
+  requiredCertifications: string[];
+  requiredSkills: string[];
+  emrExperience: string;
+  specialtyExperience: string;
+  language: string;
+  previousFacilityExperience: string;
+  maxBillRate: string;
+  estimatedHours: string;
+  priority: RequestPriority;
+  recruiterEmail: string;
+  saveAsTemplate: boolean;
+  templateName: string;
+}
+
+export interface DraftComment {
+  id: string;
+  author: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface DraftVersion {
+  id: string;
+  label: string;
+  snapshot: WizardFormSnapshot;
+  savedAt: string;
+  savedBy: string;
+}
+
+export type DraftApprovalStatus = 'not_required' | 'pending' | 'approved' | 'changes_requested';
+
+// Module4's "Draft Workforce Requests" — save/resume, reviewers,
+// comments, and version history for a request still being put together.
+export interface RequirementDraft {
+  id: string;
+  orgName: string;
+  createdBy: string;
+  title: string;
+  form: WizardFormSnapshot;
+  step: number;
+  reviewers: string[]; // emails from org.team
+  comments: DraftComment[];
+  versions: DraftVersion[];
+  approvalStatus: DraftApprovalStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type InterviewRequestStatus = 'pending_admin' | 'sent_to_worker';
@@ -299,4 +420,5 @@ export interface Organization {
   team: TeamInvite[];
   auditLog: AuditLogEntry[];
   requestTemplates: RequirementTemplate[];
+  requestDrafts: RequirementDraft[];
 }

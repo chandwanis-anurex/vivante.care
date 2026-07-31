@@ -7,12 +7,38 @@ export interface VaultEntry {
   specialty: string;
   licenseStatus: string;
   location: string;
+  certifications: string[];
+  yearsExperience: string;
 }
 
 export const MOCK_VAULT: VaultEntry[] = [
-  { id: 'V4471290', name: 'Renee Castillo', specialty: 'Registered Nurse', licenseStatus: 'Current', location: 'San Diego, CA' },
-  { id: 'V2290381', name: 'Marcus Whitfield', specialty: 'Registered Nurse', licenseStatus: 'Current', location: 'Austin, TX' },
-  { id: 'V8813204', name: 'Priya Nandakumar', specialty: 'LVN', licenseStatus: 'Expiring Soon', location: 'Sacramento, CA' },
+  {
+    id: 'V4471290',
+    name: 'Renee Castillo',
+    specialty: 'Registered Nurse',
+    licenseStatus: 'Current',
+    location: 'San Diego, CA',
+    certifications: ['BLS', 'ACLS'],
+    yearsExperience: '5+ years',
+  },
+  {
+    id: 'V2290381',
+    name: 'Marcus Whitfield',
+    specialty: 'Registered Nurse',
+    licenseStatus: 'Current',
+    location: 'Austin, TX',
+    certifications: ['BLS'],
+    yearsExperience: '2-5 years',
+  },
+  {
+    id: 'V8813204',
+    name: 'Priya Nandakumar',
+    specialty: 'Licensed Vocational Nurse',
+    licenseStatus: 'Expiring Soon',
+    location: 'Sacramento, CA',
+    certifications: ['BLS', 'PALS'],
+    yearsExperience: '2-5 years',
+  },
 ];
 
 // No real multi-account backend yet — merges in whatever passport the
@@ -27,6 +53,8 @@ export function getVaultWithOwnPassport(): VaultEntry[] {
     specialty: own.values.specialty || 'Unspecified',
     licenseStatus: 'Current',
     location: own.values.location || 'Unspecified',
+    certifications: [],
+    yearsExperience: 'Unspecified',
   };
   return [ownEntry, ...MOCK_VAULT.filter((v) => v.id !== own.id)];
 }

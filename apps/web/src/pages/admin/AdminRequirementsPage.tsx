@@ -4,7 +4,9 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useScheduleStore } from '@/hooks/useScheduleStore';
+import { useOrgRegistry } from '@/hooks/useOrgRegistry';
 import { getVaultWithOwnPassport } from '@/lib/mockData';
+import { cn } from '@/lib/utils';
 import type { MatchStatus, RequirementMatch } from '@/types';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 
@@ -26,9 +28,25 @@ interface ActionModal {
 }
 
 export function AdminRequirementsPage() {
-  const { requirements, updateMatchStatus, requestMoreInfo, createInterviewRequest, createManualMatch } =
-    useScheduleStore();
+  const {
+    requirements,
+    updateMatchStatus,
+    requestMoreInfo,
+    createInterviewRequest,
+    createManualMatch,
+    runAiMatching,
+    recruiterApproveMatch,
+    recruiterEscalate,
+    recruiterRequestCredentialUpdate,
+    recruiterSearchAgain,
+  } = useScheduleStore();
+  const { organizations, logAudit } = useOrgRegistry();
   const vault = useMemo(() => getVaultWithOwnPassport(), []);
+
+  function auditForOrg(orgName: string, action: string) {
+    const org = organizations.find((o) => o.name === orgName);
+    if (org) logAudit(org.id, action);
+  }
 
   const [orgFilter, setOrgFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<MatchStatus | 'all'>('all');
@@ -131,66 +149,171 @@ export function AdminRequirementsPage() {
                 </button>
 
                 {expanded && (
-                  <div className="mt-4 space-y-2 border-t border-charcoal/10 pt-4">
+                  <div className="mt-4 space-y-4 border-t border-charcoal/10 pt-4">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="text-xs font-bold uppercase text-charcoal/50">
+                        {requirement.pipelineStatus?.replace(/_/g, ' ') ?? 'Not yet analyzed'}
+                      </div>
+                      {(!requirement.pipelineStatus || requirement.pipelineStatus === 'submitted') && (
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            runAiMatching(requirement.id);
+                            auditForOrg(requirement.orgName, `AI matching run for "${requirement.title}"`);
+                          }}
+                        >
+                          Run AI Matching
+                        </Button>
+                      )}
+                    </div>
+
                     {matches.length === 0 ? (
                       <p className="text-sm text-charcoal/50">No matches for this filter.</p>
                     ) : (
-                      matches.map((match) => (
-                        <div
-                          key={match.id}
-                          className="border border-charcoal/15 p-3 flex items-start justify-between gap-3 flex-wrap"
-                        >
-                          <div>
-                            <div className="text-base font-bold text-charcoal">{match.candidateName}</div>
-                            <div className="text-sm text-charcoal/60">
-                              {match.specialty} · {match.passportId}
+                      matches.map((match) => {
+                        const anonymized = match.presented === false;
+                        return (
+                          <div
+                            key={match.id}
+                            className={cn(
+                              'border p-3 flex items-start justify-between gap-3 flex-wrap',
+                              anonymized ? 'border-dashed border-charcoal/25' : 'border-charcoal/15'
+                            )}
+                          >
+                            <div>
+                              <div className="text-base font-bold text-charcoal flex items-center gap-2">
+                                {match.candidateName}
+                                {anonymized && (
+                                  <span className="text-[10px] font-bold uppercase text-charcoal/40 border border-charcoal/20 px-1.5 py-0.5">
+                                    Anonymized to org
+                                  </span>
+                                )}
+                                {match.escalated && (
+                                  <span className="text-[10px] font-bold uppercase text-red-600 border border-red-300 px-1.5 py-0.5">
+                                    Escalated
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-sm text-charcoal/60">
+                                {match.specialty} · {match.passportId}
+                                {match.aiMatchScore !== undefined && ` · Match Score ${match.aiMatchScore}`}
+                              </div>
+                              {match.aiWhyReasons && match.aiWhyReasons.length > 0 && (
+                                <ul className="mt-1 space-y-0.5">
+                                  {match.aiWhyReasons.map((r) => (
+                                    <li key={r} className="text-xs text-charcoal/70">
+                                      ✓ {r}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                              {match.readiness && (
+                                <div className="flex flex-wrap gap-2 mt-1.5">
+                                  <ReadinessBadge label="License" status={match.readiness.license} />
+                                  <ReadinessBadge label="Background" status={match.readiness.background} />
+                                  <ReadinessBadge label="Drug Screen" status={match.readiness.drugScreen} />
+                                  <ReadinessBadge label="Vaccination" status={match.readiness.vaccination} />
+                                </div>
+                              )}
+                              <div className="mt-1.5">
+                                <StatusBadge status={match.status} />
+                              </div>
                             </div>
-                            <div className="mt-1.5">
-                              <StatusBadge status={match.status} />
+                            <div className="flex flex-wrap gap-2">
+                              {anonymized ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      recruiterApproveMatch(requirement.id, match.id);
+                                      auditForOrg(
+                                        requirement.orgName,
+                                        `Approved & presented ${match.candidateName} for "${requirement.title}"`
+                                      );
+                                    }}
+                                  >
+                                    Approve & Present
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() =>
+                                      setActionModal({ mode: 'moreInfo', requirementId: requirement.id, match })
+                                    }
+                                  >
+                                    Request More Info
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => updateMatchStatus(requirement.id, match.id, 'not_interested')}
+                                  >
+                                    Reject
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => recruiterSearchAgain(requirement.id)}>
+                                    Search Again
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => recruiterEscalate(requirement.id, match.id)}
+                                  >
+                                    Escalate
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => recruiterRequestCredentialUpdate(requirement.id, match.id)}
+                                  >
+                                    Request Credential Update
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    onClick={() =>
+                                      setActionModal({ mode: 'invite', requirementId: requirement.id, match })
+                                    }
+                                  >
+                                    Invite to Interview
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() =>
+                                      setActionModal({ mode: 'moreInfo', requirementId: requirement.id, match })
+                                    }
+                                  >
+                                    Need More Info
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => updateMatchStatus(requirement.id, match.id, 'selected')}
+                                  >
+                                    Select Candidate
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => updateMatchStatus(requirement.id, match.id, 'not_interested')}
+                                  >
+                                    Not Interested
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => updateMatchStatus(requirement.id, match.id, 'archived')}
+                                  >
+                                    Archive
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           </div>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() =>
-                                setActionModal({ mode: 'invite', requirementId: requirement.id, match })
-                              }
-                            >
-                              Invite to Interview
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() =>
-                                setActionModal({ mode: 'moreInfo', requirementId: requirement.id, match })
-                              }
-                            >
-                              Need More Info
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => updateMatchStatus(requirement.id, match.id, 'selected')}
-                            >
-                              Select Candidate
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => updateMatchStatus(requirement.id, match.id, 'not_interested')}
-                            >
-                              Not Interested
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => updateMatchStatus(requirement.id, match.id, 'archived')}
-                            >
-                              Archive
-                            </Button>
-                          </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 )}
@@ -323,5 +446,15 @@ export function AdminRequirementsPage() {
         </div>
       )}
     </AdminLayout>
+  );
+}
+
+function ReadinessBadge({ label, status }: { label: string; status: 'green' | 'amber' | 'red' }) {
+  const color = status === 'green' ? 'bg-teal' : status === 'amber' ? 'bg-amber-500' : 'bg-red-500';
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-charcoal/70">
+      <span className={cn('w-2 h-2', color)} />
+      {label}
+    </span>
   );
 }

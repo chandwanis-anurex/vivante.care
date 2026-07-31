@@ -152,6 +152,18 @@ const RARITY_TIER: Record<string, RarityTier> = {
 };
 
 const RADIUS_SUGGESTION_PCT: Record<RarityTier, number> = { common: 8, moderate: 14, rare: 22 };
+const RADIUS_MILES: Record<RarityTier, number> = { common: 15, moderate: 25, rare: 40 };
+
+function getRarityTier(specialty: string): RarityTier {
+  return RARITY_TIER[specialty] ?? 'moderate';
+}
+
+/** Aggregate "expand your search radius" suggestion — an estimated
+ * distance, not a per-candidate location claim (candidateMatching.ts's
+ * computeWorkforceAnalysis reuses this for Module4's Step 2 panel). */
+export function getSearchRadiusSuggestion(specialty: string): number {
+  return RADIUS_MILES[getRarityTier(specialty)];
+}
 
 export function generateSuggestions(
   specialty: string,

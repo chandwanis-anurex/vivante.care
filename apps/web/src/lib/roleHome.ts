@@ -11,6 +11,6 @@ export function getRoleHome(role: UserRole): string {
     case 'worker':
       return '/worker/passport';
     case 'admin':
-      return '/admin/requirements';
+      return '/admin/command-center';
   }
 }

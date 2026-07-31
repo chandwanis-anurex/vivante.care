@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { OrgLayout } from './OrgLayout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -28,6 +28,7 @@ import type {
   RequirementSchedule,
   RequirementTemplate,
   ShiftPeriod,
+  WizardFormSnapshot,
 } from '@/types';
 import { Sparkles, AlertTriangle, X, Search } from 'lucide-react';
 
@@ -57,38 +58,7 @@ const SHIFT_OPTIONS: ShiftPeriod[] = ['Day', 'Evening', 'Night'];
 const PRIORITY_OPTIONS: RequestPriority[] = ['Low', 'Medium', 'High', 'Emergency'];
 const YEARS_EXPERIENCE_OPTIONS = ['Less than 1 year', '1-2 years', '2-5 years', '5+ years'];
 
-interface WizardForm {
-  specialty: string;
-  reason: RequestReason | '';
-  assignmentType: AssignmentType | '';
-  facilityId: string;
-  facilityFreeform: string;
-  departmentId: string;
-  unit: string;
-  floor: string;
-  costCenter: string;
-  startDate: string;
-  endDate: string;
-  shift: ShiftPeriod | '';
-  hoursPerWeek: string;
-  weekendRequired: boolean;
-  holidayRequired: boolean;
-  overtimeAllowed: boolean;
-  stateLicense: string;
-  yearsExperience: string;
-  requiredCertifications: string[];
-  requiredSkills: string[];
-  emrExperience: string;
-  specialtyExperience: string;
-  language: string;
-  previousFacilityExperience: string;
-  maxBillRate: string;
-  estimatedHours: string;
-  priority: RequestPriority;
-  recruiterEmail: string;
-  saveAsTemplate: boolean;
-  templateName: string;
-}
+type WizardForm = WizardFormSnapshot;
 
 const INITIAL_FORM: WizardForm = {
   specialty: '',
@@ -128,19 +98,60 @@ const TOTAL_STEPS = 8;
 export function NewWorkforceRequestPage() {
   const { session } = useSession();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { requirements, shiftRequests, assignRequests, createRequirement } = useScheduleStore();
-  const { organizations, logAudit, saveRequestTemplate } = useOrgRegistry();
+  const {
+    organizations,
+    logAudit,
+    saveRequestTemplate,
+    createDraft,
+    updateDraft,
+    saveDraftVersion,
+    addDraftComment,
+    setDraftReviewers,
+    setDraftApproval,
+    deleteDraft,
+  } = useOrgRegistry();
   const vault = useMemo(() => getVaultWithOwnPassport(), []);
 
   const org = organizations.find((o) => o.name === session?.orgName);
+  const draftId = searchParams.get('draft');
+  const draft = org?.requestDrafts.find((d) => d.id === draftId);
 
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState<WizardForm>(INITIAL_FORM);
+  const [step, setStep] = useState(() => draft?.step ?? 1);
+  const [form, setForm] = useState<WizardForm>(() => draft?.form ?? INITIAL_FORM);
   const [specialtyFilter, setSpecialtyFilter] = useState('');
   const [showPreferred, setShowPreferred] = useState(false);
+  const [commentDraft, setCommentDraft] = useState('');
+  const [versionLabel, setVersionLabel] = useState('');
 
   function update(patch: Partial<WizardForm>) {
     setForm((f) => ({ ...f, ...patch }));
+  }
+
+  // 30s autosave while editing an existing draft — a ref-backed fixed
+  // interval (not reset on every keystroke) so it's a true "every 30s,"
+  // not "30s after you stop typing."
+  const formRef = useRef(form);
+  const stepRef = useRef(step);
+  formRef.current = form;
+  stepRef.current = step;
+  useEffect(() => {
+    if (!org || !draftId) return;
+    const interval = setInterval(() => {
+      updateDraft(org.id, draftId, { form: formRef.current, step: stepRef.current });
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [org, draftId, updateDraft]);
+
+  function handleSaveDraft() {
+    if (!org || !session) return;
+    if (draftId && draft) {
+      updateDraft(org.id, draftId, { form, step });
+    } else {
+      const newDraft = createDraft(org.id, form, session.name);
+      setSearchParams({ draft: newDraft.id });
+    }
   }
 
   const recentSpecialties = useMemo(
@@ -319,6 +330,10 @@ export function NewWorkforceRequestPage() {
       });
     }
 
+    if (draftId) {
+      deleteDraft(org.id, draftId);
+    }
+
     navigate(`/org/requirements/${requirement.id}`);
   }
 
@@ -332,9 +347,15 @@ export function NewWorkforceRequestPage() {
 
   return (
     <OrgLayout>
-      <h1 className="text-3xl font-bold text-charcoal mb-2">New Workforce Request</h1>
+      <div className="flex items-start justify-between gap-4 mb-2">
+        <h1 className="text-3xl font-bold text-charcoal">New Workforce Request</h1>
+        <Button variant="outline" size="sm" onClick={handleSaveDraft}>
+          Save Draft
+        </Button>
+      </div>
       <p className="text-base text-charcoal/60 mb-6">
         A few quick screens instead of one long form — most requests take under 2 minutes.
+        {draft && ` Editing draft, last saved ${new Date(draft.updatedAt).toLocaleTimeString()}.`}
       </p>
 
       {step === 1 && (
@@ -828,6 +849,158 @@ export function NewWorkforceRequestPage() {
             </div>
           </Card>
         </div>
+      )}
+
+      {draft && (
+        <Card accent="neutral" className="max-w-2xl mt-6">
+          <div className="text-lg font-bold text-charcoal mb-1">Draft Collaboration</div>
+          <p className="text-sm text-charcoal/60 mb-4">
+            Autosaves every 30s while you edit. Last saved {new Date(draft.updatedAt).toLocaleTimeString()}.
+          </p>
+
+          <div className="mb-4 pb-4 border-b border-charcoal/10">
+            <div className="text-sm font-semibold text-charcoal/70 mb-1.5">Reviewers</div>
+            {org.team.length === 0 ? (
+              <p className="text-sm text-charcoal/40">
+                No team members to assign yet —{' '}
+                <Link to="/org/setup" className="text-teal underline">
+                  invite your team
+                </Link>
+                .
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {org.team.map((t) => (
+                  <label
+                    key={t.id}
+                    className="flex items-center gap-1.5 text-sm border border-charcoal/15 px-2 py-1 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={draft.reviewers.includes(t.email)}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...draft.reviewers, t.email]
+                          : draft.reviewers.filter((r) => r !== t.email);
+                        setDraftReviewers(org.id, draft.id, next);
+                      }}
+                      className="w-3.5 h-3.5 accent-navy"
+                    />
+                    {t.email}
+                  </label>
+                ))}
+              </div>
+            )}
+            {draft.approvalStatus !== 'not_required' && (
+              <div className="mt-2">
+                <span
+                  className={cn(
+                    'text-xs font-bold uppercase px-2 py-1',
+                    draft.approvalStatus === 'approved'
+                      ? 'bg-teal/10 text-teal'
+                      : draft.approvalStatus === 'changes_requested'
+                        ? 'bg-amber-50 text-amber-700'
+                        : 'bg-charcoal/5 text-charcoal/60'
+                  )}
+                >
+                  {draft.approvalStatus.replace(/_/g, ' ')}
+                </span>
+                {draft.approvalStatus === 'pending' && (
+                  <div className="flex gap-2 mt-2">
+                    <Button size="sm" onClick={() => setDraftApproval(org.id, draft.id, 'approved')}>
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setDraftApproval(org.id, draft.id, 'changes_requested')}
+                    >
+                      Request Changes
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="mb-4 pb-4 border-b border-charcoal/10">
+            <div className="text-sm font-semibold text-charcoal/70 mb-1.5">Comments</div>
+            {draft.comments.length === 0 ? (
+              <p className="text-sm text-charcoal/40 mb-2">No comments yet.</p>
+            ) : (
+              <div className="space-y-2 mb-2 max-h-40 overflow-y-auto">
+                {draft.comments.map((c) => (
+                  <div key={c.id} className="text-sm border-b border-charcoal/10 pb-2 last:border-0">
+                    <span className="font-semibold text-charcoal">{c.author}</span>{' '}
+                    <span className="text-charcoal/40 text-xs">{new Date(c.createdAt).toLocaleString()}</span>
+                    <p className="text-charcoal/80">{c.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                value={commentDraft}
+                onChange={(e) => setCommentDraft(e.target.value)}
+                placeholder="Add a comment…"
+                className="flex-1 border border-charcoal/20 px-3 py-2 text-sm outline-none focus:border-navy"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!commentDraft.trim()}
+                onClick={() => {
+                  addDraftComment(org.id, draft.id, session?.name ?? 'You', commentDraft.trim());
+                  setCommentDraft('');
+                }}
+              >
+                Post
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-sm font-semibold text-charcoal/70 mb-1.5">Version History</div>
+            <div className="flex gap-2 mb-3">
+              <input
+                value={versionLabel}
+                onChange={(e) => setVersionLabel(e.target.value)}
+                placeholder='e.g. "Initial draft"'
+                className="flex-1 border border-charcoal/20 px-3 py-2 text-sm outline-none focus:border-navy"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!versionLabel.trim()}
+                onClick={() => {
+                  saveDraftVersion(org.id, draft.id, versionLabel.trim(), session?.name ?? 'You');
+                  setVersionLabel('');
+                }}
+              >
+                Save Version
+              </Button>
+            </div>
+            {draft.versions.length === 0 ? (
+              <p className="text-sm text-charcoal/40">No saved versions yet.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {draft.versions.map((v) => (
+                  <div
+                    key={v.id}
+                    className="flex items-center justify-between text-sm border border-charcoal/10 px-3 py-2"
+                  >
+                    <span>
+                      {v.label} · {new Date(v.savedAt).toLocaleString()}
+                    </span>
+                    <Button size="sm" variant="ghost" onClick={() => setForm(v.snapshot)}>
+                      Restore
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </Card>
       )}
     </OrgLayout>
   );
