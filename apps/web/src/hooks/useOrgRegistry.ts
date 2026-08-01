@@ -64,6 +64,24 @@ function seedState(): RegistryState {
   };
 }
 
+// Backfills array fields that didn't exist yet when a given browser's
+// localStorage was first written (e.g. requestTemplates/requestDrafts
+// were added in later modules) — without this, an org persisted before
+// one of those fields existed crashes every read site that assumes it's
+// always an array (e.g. `org.requestDrafts.find(...)`).
+function normalizeOrg(org: Organization): Organization {
+  return {
+    ...org,
+    facilities: org.facilities ?? [],
+    departments: org.departments ?? [],
+    locations: org.locations ?? [],
+    team: org.team ?? [],
+    auditLog: org.auditLog ?? [],
+    requestTemplates: org.requestTemplates ?? [],
+    requestDrafts: org.requestDrafts ?? [],
+  };
+}
+
 let cachedRaw: string | null | undefined;
 let cachedState: RegistryState | null = null;
 
@@ -75,6 +93,7 @@ function readState(): RegistryState {
   cachedRaw = raw;
   try {
     cachedState = raw ? (JSON.parse(raw) as RegistryState) : seedState();
+    if (raw) cachedState.organizations = cachedState.organizations.map(normalizeOrg);
   } catch {
     cachedState = seedState();
   }

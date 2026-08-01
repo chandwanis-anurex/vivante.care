@@ -91,6 +91,22 @@ function seedState(): ScheduleState {
 let cachedRaw: string | null | undefined;
 let cachedState: ScheduleState | null = null;
 
+// Backfills top-level state keys that didn't exist yet when a given
+// browser's localStorage was first written (e.g. interviewRequests was
+// added after the admin portal shipped) — without this, any array field
+// missing from older cached data crashes the first `.find`/`.filter`/
+// `.map` called on it directly.
+function normalizeState(state: ScheduleState): ScheduleState {
+  return {
+    availabilityRules: state.availabilityRules ?? {},
+    shiftRequests: state.shiftRequests ?? [],
+    assignRequests: state.assignRequests ?? [],
+    notifications: state.notifications ?? [],
+    requirements: state.requirements ?? [],
+    interviewRequests: state.interviewRequests ?? [],
+  };
+}
+
 function readState(): ScheduleState {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw === cachedRaw && cachedState) {
@@ -98,7 +114,7 @@ function readState(): ScheduleState {
   }
   cachedRaw = raw;
   try {
-    cachedState = raw ? (JSON.parse(raw) as ScheduleState) : seedState();
+    cachedState = raw ? normalizeState(JSON.parse(raw) as ScheduleState) : seedState();
   } catch {
     cachedState = seedState();
   }
