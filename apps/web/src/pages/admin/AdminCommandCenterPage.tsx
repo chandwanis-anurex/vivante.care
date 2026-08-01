@@ -65,13 +65,13 @@ export function AdminCommandCenterPage() {
   }, [requirements, now]);
 
   return (
-    <AdminLayout>
-      <h1 className="text-3xl font-bold text-charcoal mb-2">Command Center</h1>
-      <p className="text-base text-charcoal/60 mb-8">
-        Today's queue — every number below is computed live from real requests, matches, interviews,
-        and shifts.
-      </p>
-
+    <AdminLayout
+      hero={{
+        title: 'Command Center',
+        subtitle:
+          "Today's queue — every number below is computed live from real requests, matches, interviews, and shifts.",
+      }}
+    >
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         <QueueStat label="Open Requests" value={openRequests} link="/admin/requirements" />
         <QueueStat label="AI Ready" value={aiReadyCount} link="/admin/requirements" />

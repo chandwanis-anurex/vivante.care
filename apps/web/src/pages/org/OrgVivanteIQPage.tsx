@@ -94,8 +94,8 @@ export function OrgVivanteIQPage() {
   const activeRequirements = requirements.filter((r) => !r.archived);
 
   return (
-    <OrgLayout>
-      {/* Hero */}
+    <OrgLayout hero={{ title: 'VivanteIQ' }}>
+      {/* Greeting summary card */}
       <Card accent="navy" className="mb-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>

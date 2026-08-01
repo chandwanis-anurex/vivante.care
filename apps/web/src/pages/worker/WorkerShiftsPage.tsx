@@ -10,7 +10,7 @@ import { getDisplayShiftStatus, formatCountdown } from '@/lib/matching';
 
 export function WorkerShiftsPage() {
   const [passportId] = useState(() => getOwnPassport()?.id ?? null);
-  const { shiftRequests, assignRequests, respondToAssignRequest } = useScheduleStore();
+  const { shiftRequests, assignRequests, respondToAssignRequest, completeShift } = useScheduleStore();
   const now = useNow();
 
   const myShifts = passportId
@@ -20,13 +20,13 @@ export function WorkerShiftsPage() {
     : [];
 
   return (
-    <WorkerLayout>
-      <h1 className="text-3xl font-bold text-charcoal mb-2">Shifts</h1>
-      <p className="text-base text-charcoal/60 mb-8">
-        Assignment requests from organizations you've matched with. Accept or reject before the
-        request expires.
-      </p>
-
+    <WorkerLayout
+      hero={{
+        title: 'Shifts',
+        subtitle:
+          "Assignment requests from organizations you've matched with. Accept or reject before the request expires.",
+      }}
+    >
       {!passportId ? (
         <Card className="text-center py-16">
           <p className="text-lg text-charcoal/60">
@@ -78,10 +78,25 @@ export function WorkerShiftsPage() {
                   </div>
                 )}
 
-                {displayStatus === 'assigned' && (
+                {displayStatus === 'assigned' && now < Date.parse(`${shift.endDate}T23:59:59Z`) && (
                   <div className="mt-4 text-sm font-semibold text-teal">
                     Confirmed — you're on this shift.
                   </div>
+                )}
+
+                {displayStatus === 'assigned' && now >= Date.parse(`${shift.endDate}T23:59:59Z`) && (
+                  <div className="mt-4">
+                    <p className="text-sm text-charcoal/70 mb-3">
+                      This shift's dates have passed. Mark it complete once the work is done.
+                    </p>
+                    <Button size="sm" onClick={() => completeShift(shift.id)}>
+                      Mark Shift Complete
+                    </Button>
+                  </div>
+                )}
+
+                {displayStatus === 'complete' && (
+                  <div className="mt-4 text-sm font-semibold text-charcoal/50">Completed.</div>
                 )}
               </Card>
             );

@@ -9,6 +9,15 @@ const ORG_NAV = [
   { label: 'Organization', to: '/org/setup' },
 ];
 
-export function OrgLayout({ children }: { children: ReactNode }) {
-  return <DashboardShell navItems={ORG_NAV}>{children}</DashboardShell>;
+interface OrgLayoutProps {
+  hero: { eyebrow?: string; title: ReactNode; subtitle?: ReactNode };
+  children: ReactNode;
+}
+
+export function OrgLayout({ hero, children }: OrgLayoutProps) {
+  return (
+    <DashboardShell navItems={ORG_NAV} hero={hero}>
+      {children}
+    </DashboardShell>
+  );
 }

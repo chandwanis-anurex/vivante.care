@@ -16,17 +16,31 @@ import {
 import type { ShiftRequest } from '@/types';
 import { X } from 'lucide-react';
 
+const DEFAULT_SUBSTITUTE_NOTE = 'Not available for the requested dates';
+
 interface Picker {
   shift: ShiftRequest;
-  mode: 'auto' | 'browse';
+  mode: 'auto' | 'browse' | 'substitute';
 }
 
 export function AdminShiftsPage() {
-  const { requirements, shiftRequests, availabilityRules, assignRequests, createAssignRequest } =
-    useScheduleStore();
+  const {
+    requirements,
+    shiftRequests,
+    availabilityRules,
+    assignRequests,
+    createAssignRequest,
+    adminConfirmPreferred,
+    adminSuggestSubstitute,
+  } = useScheduleStore();
   const now = useNow();
   const vault = useMemo(() => getVaultWithOwnPassport(), []);
   const [picker, setPicker] = useState<Picker | null>(null);
+
+  const pendingReview = useMemo(
+    () => shiftRequests.filter((s) => getDisplayShiftStatus(s, assignRequests, now) === 'pending_admin_review'),
+    [shiftRequests, assignRequests, now]
+  );
 
   // Selected (post-interview) candidates who don't yet have an active or
   // confirmed shift assignment anywhere.
@@ -55,17 +69,60 @@ export function AdminShiftsPage() {
     setPicker(null);
   }
 
+  function handleSuggestSubstitute(shift: ShiftRequest, candidate: RankedCandidate) {
+    adminSuggestSubstitute(shift.id, candidate.passportId, candidate.name, DEFAULT_SUBSTITUTE_NOTE);
+    setPicker(null);
+  }
+
   const candidates = picker
-    ? rankCandidates(vault, availabilityRules, picker.shift, assignRequests, shiftRequests)
+    ? rankCandidates(vault, availabilityRules, picker.shift, assignRequests, shiftRequests).filter(
+        (c) => c.passportId !== picker.shift.preferredPassportId
+      )
     : [];
   const shownCandidates = picker?.mode === 'auto' ? candidates.slice(0, 3) : candidates;
 
   return (
-    <AdminLayout>
-      <h1 className="text-3xl font-bold text-charcoal mb-2">Shifts</h1>
-      <p className="text-base text-charcoal/60 mb-8">
-        Every org's shifts. Manually match a worker to a shift instead of relying on auto-match.
-      </p>
+    <AdminLayout
+      hero={{
+        title: 'Shifts',
+        subtitle: "Every org's shifts. Manually match a worker to a shift instead of relying on auto-match.",
+      }}
+    >
+      <div className="text-lg font-bold text-charcoal mb-3">Pending Review</div>
+      {pendingReview.length === 0 ? (
+        <Card className="text-center py-10 mb-8">
+          <p className="text-base text-charcoal/50">No shift requests waiting on review.</p>
+        </Card>
+      ) : (
+        <div className="space-y-2 mb-8">
+          {pendingReview.map((shift) => (
+            <Card key={shift.id} accent="neutral">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <div className="text-base font-bold text-charcoal">{shift.title}</div>
+                  <div className="text-sm text-charcoal/60">
+                    {shift.orgName} · {shift.specialty} · {shift.location} · {shift.label}
+                  </div>
+                  <div className="text-sm text-charcoal/70 mt-1">
+                    Requested worker:{' '}
+                    <span className="font-semibold text-navy">
+                      {shift.preferredWorkerName} ({shift.preferredPassportId})
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button size="sm" onClick={() => adminConfirmPreferred(shift.id)}>
+                    Confirm &amp; Notify Worker
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setPicker({ shift, mode: 'substitute' })}>
+                    Suggest Alternate
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <div className="text-lg font-bold text-charcoal mb-3">Selected &amp; Awaiting Shift</div>
       {selectedUnassigned.length === 0 ? (
@@ -121,6 +178,20 @@ export function AdminShiftsPage() {
                   </div>
                 )}
 
+                {displayStatus === 'pending_admin_review' && (
+                  <div className="mt-4 text-sm text-charcoal/70">
+                    Requested <span className="font-semibold text-navy">{shift.preferredWorkerName}</span> — see
+                    Pending Review above.
+                  </div>
+                )}
+
+                {displayStatus === 'pending_org_response' && (
+                  <div className="mt-4 text-sm text-charcoal/70">
+                    Suggested <span className="font-semibold text-navy">{shift.substituteWorkerName}</span> ·{' '}
+                    <span className="font-semibold text-purple">Awaiting org response</span>
+                  </div>
+                )}
+
                 {displayStatus === 'pending_assignment' && ar && (
                   <div className="mt-4 text-sm text-charcoal/70">
                     Awaiting response from{' '}
@@ -136,6 +207,10 @@ export function AdminShiftsPage() {
                   <div className="mt-4 text-sm font-semibold text-teal">
                     Assigned to {shift.assignedWorkerName}
                   </div>
+                )}
+
+                {displayStatus === 'cancelled' && (
+                  <div className="mt-4 text-sm font-semibold text-red-600">Cancelled</div>
                 )}
               </Card>
             );
@@ -153,10 +228,15 @@ export function AdminShiftsPage() {
               <X size={20} />
             </button>
             <div className="text-xl font-bold text-charcoal mb-1">
-              {picker.mode === 'auto' ? 'Suggested Matches' : 'Manually Assign'}
+              {picker.mode === 'auto'
+                ? 'Suggested Matches'
+                : picker.mode === 'substitute'
+                  ? 'Suggest an Alternate'
+                  : 'Manually Assign'}
             </div>
             <p className="text-sm text-charcoal/60 mb-4">
               For "{picker.shift.title}" ({picker.shift.orgName}) — {picker.shift.label}
+              {picker.mode === 'substitute' && ` — excluding ${picker.shift.preferredWorkerName}`}
             </p>
 
             {shownCandidates.length === 0 ? (
@@ -182,8 +262,15 @@ export function AdminShiftsPage() {
                         </div>
                       )}
                     </div>
-                    <Button size="sm" onClick={() => handleAssign(picker.shift, c)}>
-                      Assign
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        picker.mode === 'substitute'
+                          ? handleSuggestSubstitute(picker.shift, c)
+                          : handleAssign(picker.shift, c)
+                      }
+                    >
+                      {picker.mode === 'substitute' ? 'Suggest' : 'Assign'}
                     </Button>
                   </div>
                 ))}

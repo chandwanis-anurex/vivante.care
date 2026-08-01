@@ -39,14 +39,15 @@ export function PassportPage() {
   }, [passportId, values, shared]);
 
   return (
-    <WorkerLayout>
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-3xl font-bold text-charcoal">VivantePassport</h1>
+    <WorkerLayout
+      hero={{
+        title: 'VivantePassport',
+        subtitle: 'Build your profile once. Choose which fields organizations can see below.',
+      }}
+    >
+      <div className="flex justify-end mb-4">
         <span className="text-md font-bold text-teal">{passportId}</span>
       </div>
-      <p className="text-base text-charcoal/60 mb-6">
-        Build your profile once. Choose which fields organizations can see below.
-      </p>
 
       <ChatFillsFormPanel
         title="Your Profile"

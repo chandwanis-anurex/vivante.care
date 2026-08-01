@@ -16,23 +16,26 @@ export default {
         muted: '#5B6472', // Secondary/body copy gray
       },
       fontFamily: {
-        sans: ['Manrope', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
       },
+      // +20% over the original vivantecare_design_system.md scale (each
+      // value ×1.2, rounded to the nearest 0.5px) — see CLAUDE.md note on
+      // syncing this back to the Claude Design doc.
       fontSize: {
-        xs: ['10px', { lineHeight: '1.4' }],
-        sm: ['11.5px', { lineHeight: '1.5' }],
-        base: ['12.5px', { lineHeight: '1.5' }],
-        md: ['13px', { lineHeight: '1.5' }],
-        lg: ['14px', { lineHeight: '1.5' }],
-        xl: ['15px', { lineHeight: '1.6' }],
-        '2xl': ['16px', { lineHeight: '1.6' }],
-        '3xl': ['18px', { lineHeight: '1.3' }],
-        '4xl': ['21px', { lineHeight: '1.3' }],
-        '5xl': ['23px', { lineHeight: '1.2' }],
-        '6xl': ['24px', { lineHeight: '1.2' }],
-        '7xl': ['28px', { lineHeight: '1.2' }],
-        '8xl': ['40px', { lineHeight: '1.0' }],
-        '9xl': ['50px', { lineHeight: '1.08' }],
+        xs: ['12px', { lineHeight: '1.4' }],
+        sm: ['14px', { lineHeight: '1.5' }],
+        base: ['15px', { lineHeight: '1.5' }],
+        md: ['15.5px', { lineHeight: '1.5' }],
+        lg: ['17px', { lineHeight: '1.5' }],
+        xl: ['18px', { lineHeight: '1.6' }],
+        '2xl': ['19px', { lineHeight: '1.6' }],
+        '3xl': ['21.5px', { lineHeight: '1.3' }],
+        '4xl': ['25px', { lineHeight: '1.3' }],
+        '5xl': ['27.5px', { lineHeight: '1.2' }],
+        '6xl': ['29px', { lineHeight: '1.2' }],
+        '7xl': ['33.5px', { lineHeight: '1.2' }],
+        '8xl': ['48px', { lineHeight: '1.0' }],
+        '9xl': ['60px', { lineHeight: '1.08' }],
       },
       borderRadius: {
         none: '0px', // all corners squared per current design pass

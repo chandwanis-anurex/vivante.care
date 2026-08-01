@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { OrgLayout } from './OrgLayout';
 import { Search } from 'lucide-react';
 import { getVaultWithOwnPassport } from '@/lib/mockData';
@@ -12,12 +13,12 @@ export function PassportVaultPage() {
   );
 
   return (
-    <OrgLayout>
-      <h1 className="text-3xl font-bold text-charcoal mb-2">Passport Vault</h1>
-      <p className="text-base text-charcoal/60 mb-6">
-        Saved VivantePassports stay current as workers update their profile.
-      </p>
-
+    <OrgLayout
+      hero={{
+        title: 'Passport Vault',
+        subtitle: 'Saved VivantePassports stay current as workers update their profile.',
+      }}
+    >
       <div className="relative mb-4 max-w-sm">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal/40" />
         <input
@@ -42,7 +43,11 @@ export function PassportVaultPage() {
           <tbody>
             {filtered.map((v) => (
               <tr key={v.id} className="border-t border-charcoal/10 hover:bg-navy/[0.03]">
-                <td className="px-4 py-3 font-semibold text-teal">{v.id}</td>
+                <td className="px-4 py-3 font-semibold text-teal">
+                  <Link to={`/org/passport-vault/${v.id}`} className="hover:underline">
+                    {v.id}
+                  </Link>
+                </td>
                 <td className="px-4 py-3">{v.name}</td>
                 <td className="px-4 py-3">{v.specialty}</td>
                 <td className={`px-4 py-3 ${v.licenseStatus === 'Current' ? 'text-teal' : 'text-amber-600'}`}>

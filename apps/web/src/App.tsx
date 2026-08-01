@@ -11,6 +11,7 @@ import { RequirementDetailPage } from '@/pages/org/RequirementDetailPage';
 import { OrgShiftsPage } from '@/pages/org/OrgShiftsPage';
 import { NewShiftPage } from '@/pages/org/NewShiftPage';
 import { PassportVaultPage } from '@/pages/org/PassportVaultPage';
+import { PassportDetailPage } from '@/pages/org/PassportDetailPage';
 import { OrgVivanteIQPage } from '@/pages/org/OrgVivanteIQPage';
 import { OrgSetupPage } from '@/pages/org/OrgSetupPage';
 
@@ -87,6 +88,14 @@ export default function App() {
         element={
           <RequireRole role="org">
             <PassportVaultPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/org/passport-vault/:id"
+        element={
+          <RequireRole role="org">
+            <PassportDetailPage />
           </RequireRole>
         }
       />

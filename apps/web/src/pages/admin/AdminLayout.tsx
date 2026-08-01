@@ -9,6 +9,15 @@ const ADMIN_NAV = [
   { label: 'Shifts', to: '/admin/shifts' },
 ];
 
-export function AdminLayout({ children }: { children: ReactNode }) {
-  return <DashboardShell navItems={ADMIN_NAV}>{children}</DashboardShell>;
+interface AdminLayoutProps {
+  hero: { eyebrow?: string; title: ReactNode; subtitle?: ReactNode };
+  children: ReactNode;
+}
+
+export function AdminLayout({ hero, children }: AdminLayoutProps) {
+  return (
+    <DashboardShell navItems={ADMIN_NAV} hero={hero}>
+      {children}
+    </DashboardShell>
+  );
 }

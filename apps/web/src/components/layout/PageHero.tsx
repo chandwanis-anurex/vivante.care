@@ -7,6 +7,7 @@ interface PageHeroProps {
   subtitle?: ReactNode;
   children?: ReactNode;
   minHeight?: string;
+  titleClassName?: string;
 }
 
 /**
@@ -22,6 +23,7 @@ export function PageHero({
   subtitle,
   children,
   minHeight = 'min-h-[420px]',
+  titleClassName = 'text-7xl',
 }: PageHeroProps) {
   return (
     <section className={`relative w-full ${minHeight} overflow-hidden`}>
@@ -37,7 +39,7 @@ export function PageHero({
             {eyebrow}
           </div>
         )}
-        <h1 className="text-7xl font-extrabold text-charcoal leading-tight">{title}</h1>
+        <h1 className={`${titleClassName} font-extrabold text-charcoal leading-tight`}>{title}</h1>
         {subtitle && <p className="mt-5 text-xl text-charcoal/80">{subtitle}</p>}
         {children && <div className="mt-8">{children}</div>}
       </div>

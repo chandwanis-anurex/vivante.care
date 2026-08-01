@@ -58,9 +58,14 @@ export function OrgSetupPage() {
     timeZone: org?.timeZone ?? '',
   }));
 
+  const hero = {
+    title: 'Organization',
+    subtitle: 'Manage your organization profile, facilities, departments, team, and billing.',
+  };
+
   if (!org) {
     return (
-      <OrgLayout>
+      <OrgLayout hero={hero}>
         <p className="text-charcoal/60">
           No organization record found for this session — this page only works for orgs created
           via the /register flow (the 3 seeded demo orgs included).
@@ -82,11 +87,7 @@ export function OrgSetupPage() {
   ];
 
   return (
-    <OrgLayout>
-      <h1 className="text-3xl font-bold text-charcoal mb-2">Organization</h1>
-      <p className="text-base text-charcoal/60 mb-6">
-        Manage your organization profile, facilities, departments, team, and billing.
-      </p>
+    <OrgLayout hero={hero}>
 
       <Card accent="navy" className="mb-8">
         <div className="text-lg font-bold text-charcoal mb-4">Today's Workforce Snapshot</div>

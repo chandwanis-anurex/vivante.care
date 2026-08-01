@@ -48,13 +48,13 @@ export function NewShiftPage() {
   }
 
   return (
-    <OrgLayout>
-      <h1 className="text-3xl font-bold text-charcoal mb-2">New Shift</h1>
-      <p className="text-base text-charcoal/60 mb-6">
-        Describe the staffing need — the matching engine will use this to find or suggest
-        available VivantePassports.
-      </p>
-
+    <OrgLayout
+      hero={{
+        title: 'New Shift',
+        subtitle:
+          'Describe the staffing need — the matching engine will use this to find or suggest available VivantePassports.',
+      }}
+    >
       <ChatFillsFormPanel
         title="Shift Details"
         description="I'll ask about specialty, location, and any notes for the worker."

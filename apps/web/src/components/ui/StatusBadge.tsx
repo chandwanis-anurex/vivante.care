@@ -43,12 +43,21 @@ export function StatusBadge({ status }: { status: MatchStatus }) {
 
 const SHIFT_STATUS_META: Record<ShiftStatus, { label: string; className: string }> = {
   open: { label: 'Open', className: 'border-teal/40 text-teal bg-teal/10' },
+  pending_admin_review: {
+    label: 'Pending Review',
+    className: 'border-amber-300 text-amber-600 bg-amber-50/60',
+  },
+  pending_org_response: {
+    label: 'Alternate Suggested',
+    className: 'border-purple text-purple bg-purple/10',
+  },
   pending_assignment: {
     label: 'Pending Response',
     className: 'border-amber-400 text-amber-700 bg-amber-50',
   },
   assigned: { label: 'Assigned', className: 'border-navy text-white bg-navy' },
   complete: { label: 'Complete', className: 'border-charcoal/20 text-charcoal/50 bg-charcoal/5' },
+  cancelled: { label: 'Cancelled', className: 'border-red-300 text-red-600 bg-red-50' },
 };
 
 export function ShiftStatusBadge({ status }: { status: ShiftStatus }) {

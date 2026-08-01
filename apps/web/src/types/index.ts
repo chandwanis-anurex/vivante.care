@@ -290,7 +290,18 @@ export interface ScheduleRule {
   label: string; // human-readable summary (AI-authored or manual)
 }
 
-export type ShiftStatus = 'open' | 'pending_assignment' | 'assigned' | 'complete';
+// pending_admin_review: org proposed a worker (either entry point), admin
+// hasn't decided yet. pending_org_response: admin proposed a substitute,
+// org must accept or cancel. Everything after that is the original
+// AssignRequest confirm/reject/expiry flow, unchanged.
+export type ShiftStatus =
+  | 'open'
+  | 'pending_admin_review'
+  | 'pending_org_response'
+  | 'pending_assignment'
+  | 'assigned'
+  | 'complete'
+  | 'cancelled';
 
 // The org's demand-side counterpart to ScheduleRule — reuses the same
 // recurrence shape so matching is a straight overlap comparison.
@@ -311,6 +322,13 @@ export interface ShiftRequest {
   status: ShiftStatus;
   assignedPassportId?: string;
   assignedWorkerName?: string;
+  // Org's chosen worker, awaiting admin review (pending_admin_review).
+  preferredPassportId?: string;
+  preferredWorkerName?: string;
+  // Admin's proposed alternate, awaiting org accept/cancel (pending_org_response).
+  substitutePassportId?: string;
+  substituteWorkerName?: string;
+  substituteNote?: string;
 }
 
 export type AssignRequestStatus = 'pending' | 'accepted' | 'rejected' | 'expired';

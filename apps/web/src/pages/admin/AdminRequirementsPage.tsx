@@ -88,12 +88,8 @@ export function AdminRequirementsPage() {
   }
 
   return (
-    <AdminLayout>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-charcoal">Requirements</h1>
-          <p className="text-base text-charcoal/60 mt-1">Every requirement across every org.</p>
-        </div>
+    <AdminLayout hero={{ title: 'Requirements', subtitle: 'Every requirement across every org.' }}>
+      <div className="flex justify-end mb-6">
         <Button onClick={() => setShowManualMatch(true)}>Create Manual Match</Button>
       </div>
 

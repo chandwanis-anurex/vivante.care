@@ -23,13 +23,13 @@ export function JobMatchesPage() {
   }, [requirements, interviewRequests, passportId]);
 
   return (
-    <WorkerLayout>
-      <h1 className="text-3xl font-bold text-charcoal mb-2">Job Matches</h1>
-      <p className="text-base text-charcoal/60 mb-8">
-        Interview slots are scheduled and confirmed by the VivanteCare team — you'll see the
-        confirmed time here once it's set.
-      </p>
-
+    <WorkerLayout
+      hero={{
+        title: 'Job Matches',
+        subtitle:
+          "Interview slots are scheduled and confirmed by the VivanteCare team — you'll see the confirmed time here once it's set.",
+      }}
+    >
       {!passportId ? (
         <Card className="text-center py-16">
           <p className="text-lg text-charcoal/60">

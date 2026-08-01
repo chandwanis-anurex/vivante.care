@@ -113,3 +113,41 @@ user opted out of the Chrome extension) — visual checks were done via the
 Vite dev server + the user's own screenshots/feedback, not automated
 screenshots. If a future session has browser tooling, it's worth doing a
 proper visual pass.
+
+## Dashboard visual refresh + admin-mediated shift requests (later session)
+
+- **Font**: Manrope → Inter (`index.html`'s Google Fonts link,
+  `tailwind.config.js`'s `fontFamily.sans`) — chosen for on-screen
+  legibility at the app's small dashboard sizes.
+- **Type scale**: every `fontSize` value bumped +20% over the rebrand's
+  original scale (rounded to the nearest 0.5px). **The Claude Design doc
+  (`vivantecare_design_system.md`) was not updated to match** — this
+  deviates from the "update the doc first" rule above; port these values
+  back if that doc needs to stay authoritative.
+- **Hero banner on every logged-in page**: `PageHero.tsx` (previously only
+  used by the landing page) is now rendered by `DashboardShell.tsx` itself
+  via a required `hero: { eyebrow?, title, subtitle? }` prop, full-width
+  between `Header` and the sidebar/main row, same nurse photo and 420px
+  height as the landing hero. `OrgLayout`/`WorkerLayout`/`AdminLayout` all
+  forward `hero` from the page. Every page's old inline `<h1>` was moved
+  into that prop — there is no page-level `<h1>` left anywhere in the
+  dashboards.
+- **Admin-mediated shift assignment**: orgs can no longer assign a worker
+  directly. Both entry points — `OrgShiftsPage`'s Auto-Match/Browse picker
+  and the new Passport Vault → passport detail → "Request Shift" flow
+  (`PassportDetailPage.tsx`, `/org/passport-vault/:id`) — set a
+  `preferredPassportId` on the `ShiftRequest` and land on
+  `pending_admin_review`. Admin (`AdminShiftsPage.tsx`'s new "Pending
+  Review" section) either confirms the preferred worker (routes into the
+  existing `AssignRequest` accept/reject/expiry flow, unchanged) or
+  suggests a substitute (`pending_org_response` — org sees an Accept/Cancel
+  card). Admin's own direct-assign picker on `AdminShiftsPage` (Auto-Match/
+  Manually Assign in "All Shifts") is untouched — admin picking a worker
+  already is the approval. Workers get a "Mark Shift Complete" button once
+  a shift's `endDate` has passed, which is what makes
+  `AdminPassportsPage`'s new "Current Status" column flip back to
+  "Available" — that column is a live derivation from `shiftRequests`, not
+  a separately tracked field. The worker's own `shared` per-field toggle
+  (`ownPassport.ts`) stays exactly as decorative as it was before this
+  session — the new passport detail page shows every field, matching how
+  `PassportVaultPage`'s list already worked, not gated by that toggle.

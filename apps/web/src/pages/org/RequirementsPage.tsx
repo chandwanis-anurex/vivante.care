@@ -18,14 +18,13 @@ export function RequirementsPage() {
   );
 
   return (
-    <OrgLayout>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-charcoal">Requirements</h1>
-          <p className="text-base text-charcoal/60 mt-1">
-            Matching runs every 12 hours. A requirement with no matches yet will stay open.
-          </p>
-        </div>
+    <OrgLayout
+      hero={{
+        title: 'Requirements',
+        subtitle: 'Matching runs every 12 hours. A requirement with no matches yet will stay open.',
+      }}
+    >
+      <div className="flex items-center justify-end mb-8">
         <div className="flex gap-3">
           <Button
             variant="outline"

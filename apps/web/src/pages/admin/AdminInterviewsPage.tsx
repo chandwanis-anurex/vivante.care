@@ -12,12 +12,12 @@ export function AdminInterviewsPage() {
   const sent = interviewRequests.filter((ir) => ir.status === 'sent_to_worker');
 
   return (
-    <AdminLayout>
-      <h1 className="text-3xl font-bold text-charcoal mb-2">Interviews</h1>
-      <p className="text-base text-charcoal/60 mb-8">
-        Orgs request an interview; only VivanteCare picks the actual slot and sends it to the
-        worker.
-      </p>
+    <AdminLayout
+      hero={{
+        title: 'Interviews',
+        subtitle: 'Orgs request an interview; only VivanteCare picks the actual slot and sends it to the worker.',
+      }}
+    >
 
       <div className="text-lg font-bold text-charcoal mb-3">Awaiting a Slot</div>
       {pending.length === 0 ? (

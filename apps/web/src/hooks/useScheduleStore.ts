@@ -8,6 +8,7 @@ import type {
   RequirementMatch,
   ScheduleRule,
   ShiftRequest,
+  ShiftStatus,
 } from '@/types';
 import { ASSIGN_REQUEST_TTL_MINUTES } from '@/lib/config';
 import { getEffectiveStatus } from '@/lib/matching';
@@ -205,6 +206,13 @@ export function useScheduleStore() {
       category: 'staffing',
     };
 
+    // A rejected/expired org-initiated request (one with a preferred
+    // worker on file) falls back to admin review so admin can try a
+    // substitute, instead of silently dropping the preferred-worker info.
+    // Admin-initiated direct assigns (no preferredPassportId) fall back to
+    // 'open' exactly as before — admin already was the approval step.
+    const fallbackStatus: ShiftStatus = shift?.preferredPassportId ? 'pending_admin_review' : 'open';
+
     writeState({
       ...current,
       assignRequests: current.assignRequests.map((a) =>
@@ -214,9 +222,181 @@ export function useScheduleStore() {
         s.id === ar.shiftId
           ? response === 'accepted'
             ? { ...s, status: 'assigned' }
-            : { ...s, status: 'open', assignedPassportId: undefined, assignedWorkerName: undefined }
+            : { ...s, status: fallbackStatus, assignedPassportId: undefined, assignedWorkerName: undefined }
           : s
       ),
+      notifications: [notification, ...current.notifications],
+    });
+  }, []);
+
+  // Org proposed a worker (either the Passport-Vault "Request Shift" flow
+  // or OrgShiftsPage's Auto-Match/Browse picker) — creates/updates the
+  // shift with a preferred candidate and routes to admin for review
+  // instead of notifying the worker directly.
+  const requestShiftForPassport = useCallback(
+    (
+      input: Omit<ShiftRequest, 'id' | 'createdAt' | 'status' | 'assignedPassportId' | 'assignedWorkerName' | 'preferredPassportId' | 'preferredWorkerName'>,
+      passportId: string,
+      workerName: string
+    ) => {
+      const current = readState();
+      const now = new Date().toISOString();
+      const shift: ShiftRequest = {
+        ...input,
+        id: crypto.randomUUID(),
+        createdAt: now,
+        status: 'pending_admin_review',
+        preferredPassportId: passportId,
+        preferredWorkerName: workerName,
+      };
+      const notification: AppNotification = {
+        id: crypto.randomUUID(),
+        audience: 'admin',
+        message: `${input.orgName} wants to request ${workerName} (${passportId}) for "${shift.title}".`,
+        createdAt: now,
+        read: false,
+        link: '/admin/shifts',
+        category: 'staffing',
+      };
+      writeState({
+        ...current,
+        shiftRequests: [shift, ...current.shiftRequests],
+        notifications: [notification, ...current.notifications],
+      });
+      return shift;
+    },
+    []
+  );
+
+  // OrgShiftsPage's Auto-Match/Browse Vault picker — used to call
+  // createAssignRequest directly; now routes through the same admin
+  // review gate as requestShiftForPassport above.
+  const pickPreferredCandidate = useCallback((shiftId: string, passportId: string, workerName: string) => {
+    const current = readState();
+    const shift = current.shiftRequests.find((s) => s.id === shiftId);
+    if (!shift) return;
+    const now = new Date().toISOString();
+    const notification: AppNotification = {
+      id: crypto.randomUUID(),
+      audience: 'admin',
+      message: `${shift.orgName} wants to request ${workerName} (${passportId}) for "${shift.title}".`,
+      createdAt: now,
+      read: false,
+      link: '/admin/shifts',
+      category: 'staffing',
+    };
+    writeState({
+      ...current,
+      shiftRequests: current.shiftRequests.map((s) =>
+        s.id === shiftId
+          ? { ...s, status: 'pending_admin_review', preferredPassportId: passportId, preferredWorkerName: workerName }
+          : s
+      ),
+      notifications: [notification, ...current.notifications],
+    });
+  }, []);
+
+  const adminConfirmPreferred = useCallback(
+    (shiftId: string) => {
+      const current = readState();
+      const shift = current.shiftRequests.find((s) => s.id === shiftId);
+      if (!shift?.preferredPassportId || !shift.preferredWorkerName) return;
+      createAssignRequest(shift, shift.preferredPassportId, shift.preferredWorkerName, shift.orgName);
+    },
+    [createAssignRequest]
+  );
+
+  const adminSuggestSubstitute = useCallback(
+    (shiftId: string, passportId: string, workerName: string, note: string) => {
+      const current = readState();
+      const shift = current.shiftRequests.find((s) => s.id === shiftId);
+      if (!shift) return;
+      const now = new Date().toISOString();
+      const notification: AppNotification = {
+        id: crypto.randomUUID(),
+        audience: 'org',
+        message: `${shift.preferredWorkerName ?? 'Your requested worker'} isn't available for "${shift.title}". VivanteCare suggests ${workerName} (${passportId}) — ${note}`,
+        createdAt: now,
+        read: false,
+        link: '/org/shifts',
+        category: 'staffing',
+      };
+      writeState({
+        ...current,
+        shiftRequests: current.shiftRequests.map((s) =>
+          s.id === shiftId
+            ? {
+                ...s,
+                status: 'pending_org_response',
+                substitutePassportId: passportId,
+                substituteWorkerName: workerName,
+                substituteNote: note,
+              }
+            : s
+        ),
+        notifications: [notification, ...current.notifications],
+      });
+    },
+    []
+  );
+
+  const orgAcceptSubstitute = useCallback(
+    (shiftId: string) => {
+      const current = readState();
+      const shift = current.shiftRequests.find((s) => s.id === shiftId);
+      if (!shift?.substitutePassportId || !shift.substituteWorkerName) return;
+      createAssignRequest(shift, shift.substitutePassportId, shift.substituteWorkerName, shift.orgName);
+      const after = readState();
+      writeState({
+        ...after,
+        shiftRequests: after.shiftRequests.map((s) =>
+          s.id === shiftId
+            ? { ...s, substitutePassportId: undefined, substituteWorkerName: undefined, substituteNote: undefined }
+            : s
+        ),
+      });
+    },
+    [createAssignRequest]
+  );
+
+  const orgCancelShiftRequest = useCallback((shiftId: string) => {
+    const current = readState();
+    const shift = current.shiftRequests.find((s) => s.id === shiftId);
+    if (!shift) return;
+    const now = new Date().toISOString();
+    const notification: AppNotification = {
+      id: crypto.randomUUID(),
+      audience: 'admin',
+      message: `${shift.orgName} cancelled the request for "${shift.title}".`,
+      createdAt: now,
+      read: false,
+      link: '/admin/shifts',
+      category: 'staffing',
+    };
+    writeState({
+      ...current,
+      shiftRequests: current.shiftRequests.map((s) => (s.id === shiftId ? { ...s, status: 'cancelled' } : s)),
+      notifications: [notification, ...current.notifications],
+    });
+  }, []);
+
+  const completeShift = useCallback((shiftId: string) => {
+    const current = readState();
+    const shift = current.shiftRequests.find((s) => s.id === shiftId);
+    if (!shift || shift.status !== 'assigned') return;
+    const now = new Date().toISOString();
+    const notification: AppNotification = {
+      id: crypto.randomUUID(),
+      audience: 'org',
+      message: `${shift.assignedWorkerName ?? 'Worker'} marked "${shift.title}" complete.`,
+      createdAt: now,
+      read: false,
+      link: '/org/shifts',
+      category: 'staffing',
+    };
+    writeState({
+      ...current,
+      shiftRequests: current.shiftRequests.map((s) => (s.id === shiftId ? { ...s, status: 'complete' } : s)),
       notifications: [notification, ...current.notifications],
     });
   }, []);
@@ -679,6 +859,13 @@ export function useScheduleStore() {
     createShiftRequest,
     createAssignRequest,
     respondToAssignRequest,
+    requestShiftForPassport,
+    pickPreferredCandidate,
+    adminConfirmPreferred,
+    adminSuggestSubstitute,
+    orgAcceptSubstitute,
+    orgCancelShiftRequest,
+    completeShift,
     markNotificationRead,
     createRequirement,
     updateMatchStatus,

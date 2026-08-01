@@ -337,26 +337,31 @@ export function NewWorkforceRequestPage() {
     navigate(`/org/requirements/${requirement.id}`);
   }
 
+  const hero = {
+    title: 'New Workforce Request',
+    subtitle: (
+      <>
+        A few quick screens instead of one long form — most requests take under 2 minutes.
+        {draft && ` Editing draft, last saved ${new Date(draft.updatedAt).toLocaleTimeString()}.`}
+      </>
+    ),
+  };
+
   if (!org) {
     return (
-      <OrgLayout>
+      <OrgLayout hero={hero}>
         <p className="text-charcoal/60">No organization record found for this session.</p>
       </OrgLayout>
     );
   }
 
   return (
-    <OrgLayout>
-      <div className="flex items-start justify-between gap-4 mb-2">
-        <h1 className="text-3xl font-bold text-charcoal">New Workforce Request</h1>
+    <OrgLayout hero={hero}>
+      <div className="flex justify-end mb-4">
         <Button variant="outline" size="sm" onClick={handleSaveDraft}>
           Save Draft
         </Button>
       </div>
-      <p className="text-base text-charcoal/60 mb-6">
-        A few quick screens instead of one long form — most requests take under 2 minutes.
-        {draft && ` Editing draft, last saved ${new Date(draft.updatedAt).toLocaleTimeString()}.`}
-      </p>
 
       {step === 1 && (
         <StepShell

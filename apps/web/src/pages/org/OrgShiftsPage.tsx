@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { ShiftStatusBadge } from '@/components/ui/StatusBadge';
 import { useSession } from '@/hooks/useSession';
 import { useScheduleStore } from '@/hooks/useScheduleStore';
+import { useOrgRegistry } from '@/hooks/useOrgRegistry';
 import { useNow } from '@/hooks/useNow';
 import { getVaultWithOwnPassport } from '@/lib/mockData';
 import {
@@ -25,7 +26,9 @@ interface Picker {
 
 export function OrgShiftsPage() {
   const { session } = useSession();
-  const { shiftRequests, availabilityRules, assignRequests, createAssignRequest } = useScheduleStore();
+  const { shiftRequests, availabilityRules, assignRequests, pickPreferredCandidate, orgAcceptSubstitute, orgCancelShiftRequest } =
+    useScheduleStore();
+  const { organizations, logAudit } = useOrgRegistry();
   const now = useNow();
   const vault = useMemo(() => getVaultWithOwnPassport(), []);
   const [picker, setPicker] = useState<Picker | null>(null);
@@ -34,12 +37,18 @@ export function OrgShiftsPage() {
     [shiftRequests, session?.orgName]
   );
 
+  function auditThis(action: string) {
+    const org = organizations.find((o) => o.name === session?.orgName);
+    if (org) logAudit(org.id, action);
+  }
+
   function pendingAssignRequestFor(shiftId: string) {
     return assignRequests.find((ar) => ar.shiftId === shiftId && getEffectiveStatus(ar) === 'pending');
   }
 
   function handleAssign(shift: ShiftRequest, candidate: RankedCandidate) {
-    createAssignRequest(shift, candidate.passportId, candidate.name, session?.orgName ?? 'Your Organization');
+    pickPreferredCandidate(shift.id, candidate.passportId, candidate.name);
+    auditThis(`Requested ${candidate.name} (${candidate.passportId}) for "${shift.title}"`);
     setPicker(null);
   }
 
@@ -49,14 +58,13 @@ export function OrgShiftsPage() {
   const shownCandidates = picker?.mode === 'auto' ? candidates.slice(0, 3) : candidates;
 
   return (
-    <OrgLayout>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-charcoal">Shifts</h1>
-          <p className="text-base text-charcoal/60 mt-1">
-            Post a shift, then let the system suggest a match or browse the Passport Vault yourself.
-          </p>
-        </div>
+    <OrgLayout
+      hero={{
+        title: 'Shifts',
+        subtitle: 'Post a shift, then let the system suggest a match or browse the Passport Vault yourself.',
+      }}
+    >
+      <div className="flex items-center justify-end mb-8">
         <Link to="/org/shifts/new">
           <Button>
             <Plus size={16} />
@@ -97,6 +105,47 @@ export function OrgShiftsPage() {
                   </div>
                 )}
 
+                {displayStatus === 'pending_admin_review' && (
+                  <div className="mt-4 text-sm text-charcoal/70">
+                    Requested <span className="font-semibold text-navy">{shift.preferredWorkerName}</span> ·{' '}
+                    <span className="font-semibold text-amber-600">Awaiting VivanteCare review</span>
+                  </div>
+                )}
+
+                {displayStatus === 'pending_org_response' && (
+                  <div className="mt-4 border border-purple/30 bg-purple/5 p-3">
+                    <p className="text-sm text-charcoal/80">
+                      <span className="font-semibold">{shift.preferredWorkerName}</span> isn't available.
+                      VivanteCare suggests{' '}
+                      <span className="font-semibold text-navy">
+                        {shift.substituteWorkerName} ({shift.substitutePassportId})
+                      </span>
+                      {shift.substituteNote && ` — ${shift.substituteNote}`}
+                    </p>
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          orgAcceptSubstitute(shift.id);
+                          auditThis(`Accepted substitute ${shift.substituteWorkerName} for "${shift.title}"`);
+                        }}
+                      >
+                        Accept Shift
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          orgCancelShiftRequest(shift.id);
+                          auditThis(`Cancelled shift request "${shift.title}"`);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {displayStatus === 'pending_assignment' && ar && (
                   <div className="mt-4 text-sm text-charcoal/70">
                     Awaiting response from{' '}
@@ -112,6 +161,10 @@ export function OrgShiftsPage() {
                   <div className="mt-4 text-sm font-semibold text-teal">
                     Assigned to {shift.assignedWorkerName}
                   </div>
+                )}
+
+                {displayStatus === 'cancelled' && (
+                  <div className="mt-4 text-sm font-semibold text-red-600">Cancelled</div>
                 )}
               </Card>
             );
@@ -159,7 +212,7 @@ export function OrgShiftsPage() {
                       )}
                     </div>
                     <Button size="sm" onClick={() => handleAssign(picker.shift, c)}>
-                      Assign
+                      Request
                     </Button>
                   </div>
                 ))}

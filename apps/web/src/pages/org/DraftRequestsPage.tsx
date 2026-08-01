@@ -19,21 +19,21 @@ export function DraftRequestsPage() {
   const { organizations, deleteDraft } = useOrgRegistry();
   const org = organizations.find((o) => o.name === session?.orgName);
 
+  const hero = {
+    title: 'Draft Requests',
+    subtitle: "Saved workforce requests you haven't submitted yet — resume anytime.",
+  };
+
   if (!org) {
     return (
-      <OrgLayout>
+      <OrgLayout hero={hero}>
         <p className="text-charcoal/60">No organization record found for this session.</p>
       </OrgLayout>
     );
   }
 
   return (
-    <OrgLayout>
-      <h1 className="text-3xl font-bold text-charcoal mb-2">Draft Requests</h1>
-      <p className="text-base text-charcoal/60 mb-6">
-        Saved workforce requests you haven't submitted yet — resume anytime.
-      </p>
-
+    <OrgLayout hero={hero}>
       {org.requestDrafts.length === 0 ? (
         <Card className="text-center py-16">
           <p className="text-lg text-charcoal/60">No drafts saved yet.</p>

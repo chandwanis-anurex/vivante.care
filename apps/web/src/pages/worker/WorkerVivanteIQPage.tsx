@@ -9,10 +9,7 @@ const METRICS = [
 
 export function WorkerVivanteIQPage() {
   return (
-    <WorkerLayout>
-      <h1 className="text-3xl font-bold text-charcoal mb-2">VivanteIQ</h1>
-      <p className="text-base text-charcoal/60 mb-8">Your activity at a glance.</p>
-
+    <WorkerLayout hero={{ title: 'VivanteIQ', subtitle: 'Your activity at a glance.' }}>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {METRICS.map((m) => (
           <Card key={m.label} accent="teal">

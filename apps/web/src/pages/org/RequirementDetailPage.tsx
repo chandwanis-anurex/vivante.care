@@ -42,7 +42,7 @@ export function RequirementDetailPage() {
 
   if (!requirement) {
     return (
-      <OrgLayout>
+      <OrgLayout hero={{ title: 'Requirement' }}>
         <p className="text-charcoal/60">Requirement not found.</p>
       </OrgLayout>
     );
@@ -72,22 +72,19 @@ export function RequirementDetailPage() {
   }
 
   return (
-    <OrgLayout>
-      <Link
-        to="/org/requirements"
-        className="inline-flex items-center gap-1 text-sm font-semibold text-charcoal/60 hover:text-navy mb-4"
-      >
-        <ChevronLeft size={16} /> All Requirements
-      </Link>
-
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-charcoal">{requirement.title}</h1>
-          <p className="text-base text-charcoal/60 mt-1">
-            {requirement.location} · {requirement.shiftType} · Opened{' '}
-            {new Date(requirement.openedAt).toLocaleDateString()}
-          </p>
-        </div>
+    <OrgLayout
+      hero={{
+        title: requirement.title,
+        subtitle: `${requirement.location} · ${requirement.shiftType} · Opened ${new Date(requirement.openedAt).toLocaleDateString()}`,
+      }}
+    >
+      <div className="flex items-center justify-between mb-6">
+        <Link
+          to="/org/requirements"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-charcoal/60 hover:text-navy"
+        >
+          <ChevronLeft size={16} /> All Requirements
+        </Link>
         <Button variant="outline">Duplicate Requirement</Button>
       </div>
 

@@ -8,6 +8,15 @@ const WORKER_NAV = [
   { label: 'VivanteIQ', to: '/worker/vivanteiq' },
 ];
 
-export function WorkerLayout({ children }: { children: ReactNode }) {
-  return <DashboardShell navItems={WORKER_NAV}>{children}</DashboardShell>;
+interface WorkerLayoutProps {
+  hero: { eyebrow?: string; title: ReactNode; subtitle?: ReactNode };
+  children: ReactNode;
+}
+
+export function WorkerLayout({ hero, children }: WorkerLayoutProps) {
+  return (
+    <DashboardShell navItems={WORKER_NAV} hero={hero}>
+      {children}
+    </DashboardShell>
+  );
 }
