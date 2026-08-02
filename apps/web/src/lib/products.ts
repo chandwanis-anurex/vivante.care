@@ -110,6 +110,7 @@ export const PRODUCTS: ProductInfo[] = [
     accent: 'cyan',
     color: 'text-cyan',
     ring: 'border-cyan',
+    headshot: '/images/headshot-homecare.png',
     features: [
       { icon: GraduationCap, label: 'Training' },
       { icon: BadgeCheck, label: 'State Certification' },

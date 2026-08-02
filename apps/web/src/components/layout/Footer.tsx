@@ -10,8 +10,8 @@ export function Footer() {
           <div>
             <div className="text-xl font-extrabold mb-2">Our Promise</div>
             <p className="text-md text-white/60 leading-relaxed">
-              We don&apos;t just fill shifts. We build intelligent healthcare workforces that are
-              faster, safer and stronger.
+              We don&apos;t just help fill shifts. We build intelligent healthcare workforce that
+              adapts to your needs rapidly.
             </p>
           </div>
         </div>

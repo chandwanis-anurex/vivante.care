@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { PageShell } from '@/components/layout/PageShell';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -44,25 +45,39 @@ export function LoginPage() {
           </Card>
         ) : !selected ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <button onClick={() => setSelected('org')} className="text-left">
-              <Card accent="navy" className="h-full hover:bg-navy/[0.06] transition-colors cursor-pointer">
-                <Building2 className="text-navy mb-4" size={28} strokeWidth={1.75} />
-                <div className="text-2xl font-bold text-charcoal mb-2">Healthcare Org Login</div>
-                <p className="text-base text-charcoal/70">
-                  Post requirements, review matches, and manage your Passport Vault.
-                </p>
-              </Card>
-            </button>
+            <div>
+              <button onClick={() => setSelected('org')} className="text-left w-full">
+                <Card accent="navy" className="h-full hover:bg-navy/[0.06] transition-colors cursor-pointer">
+                  <Building2 className="text-navy mb-4" size={28} strokeWidth={1.75} />
+                  <div className="text-2xl font-bold text-charcoal mb-2">Healthcare Org Login</div>
+                  <p className="text-base text-charcoal/70">
+                    Post requirements, review matches, and manage your Passport Vault.
+                  </p>
+                </Card>
+              </button>
+              <div className="text-center mt-3">
+                <Link to="/register?role=org" className="text-sm font-semibold text-navy underline">
+                  New Registration
+                </Link>
+              </div>
+            </div>
 
-            <button onClick={() => setSelected('worker')} className="text-left">
-              <Card accent="teal" className="h-full hover:bg-teal/[0.08] transition-colors cursor-pointer">
-                <UserRound className="text-teal mb-4" size={28} strokeWidth={1.75} />
-                <div className="text-2xl font-bold text-charcoal mb-2">Healthcare Worker Login</div>
-                <p className="text-base text-charcoal/70">
-                  Manage your VivantePassport, job matches, and shifts.
-                </p>
-              </Card>
-            </button>
+            <div>
+              <button onClick={() => setSelected('worker')} className="text-left w-full">
+                <Card accent="teal" className="h-full hover:bg-teal/[0.08] transition-colors cursor-pointer">
+                  <UserRound className="text-teal mb-4" size={28} strokeWidth={1.75} />
+                  <div className="text-2xl font-bold text-charcoal mb-2">Healthcare Worker Login</div>
+                  <p className="text-base text-charcoal/70">
+                    Manage your VivantePassport, job matches, and shifts.
+                  </p>
+                </Card>
+              </button>
+              <div className="text-center mt-3">
+                <Link to="/register?role=worker" className="text-sm font-semibold text-teal underline">
+                  New Registration
+                </Link>
+              </div>
+            </div>
           </div>
         ) : (
           <Card accent="neutral">
