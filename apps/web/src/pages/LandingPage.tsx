@@ -1,17 +1,17 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageShell } from '@/components/layout/PageShell';
 import { Card } from '@/components/ui/Card';
 import { PRODUCTS } from '@/lib/products';
 import {
-  Radar,
-  ShieldCheck,
-  HeartHandshake,
-  Target,
-  PiggyBank,
   ClipboardCheck,
   CheckCircle2,
   Gauge,
   Clock,
+  BrainCircuit,
+  ChevronLeft,
+  ChevronRight,
+  Quote,
 } from 'lucide-react';
 
 const DASHBOARD_STATS = [
@@ -21,12 +21,67 @@ const DASHBOARD_STATS = [
   { icon: Clock, value: '18.4 hrs', label: 'Avg. Time to Fill' },
 ];
 
-const BENEFITS = [
-  { icon: Radar, title: 'Smarter Staffing', desc: 'Fill shifts faster with AI-powered matching.' },
-  { icon: ShieldCheck, title: 'Stronger Compliance', desc: 'Reduce risk and stay audit-ready.' },
-  { icon: HeartHandshake, title: 'Healthier Workforce', desc: 'Drive satisfaction and retention.' },
-  { icon: Target, title: 'Better Outcomes', desc: 'Improve quality of care.' },
-  { icon: PiggyBank, title: 'Lower Cost of Care', desc: 'Optimize resources and reduce waste.' },
+const HIRING_STEPS = [
+  {
+    step: 1,
+    title: 'Onboard',
+    desc: 'Healthcare Org is onboarded on the VivanteCare platform.',
+  },
+  {
+    step: 2,
+    title: 'Add a Requirement',
+    desc: 'Easily add a staffing requirement using a friendly chat interface.',
+  },
+  {
+    step: 3,
+    title: 'AI Matching',
+    desc: 'VivanteHaaS AI engine matches the requirement to screened candidates.',
+  },
+  {
+    step: 4,
+    title: 'Review & Interview',
+    desc: 'Review VivantePassports of qualified staff and interview them.',
+  },
+  {
+    step: 5,
+    title: 'Hire & Manage',
+    desc: 'Hire the right fit and manage shifts, all in one place.',
+  },
+];
+
+// Demo copy — no real customers were interviewed for these; standing in
+// until real testimonials are supplied.
+const TESTIMONIALS = [
+  {
+    quote:
+      'We cut our average time-to-fill nearly in half. The AI matching actually understands what "qualified" means for our unit, not just keyword matching.',
+    name: 'Dana Whitfield',
+    role: 'Chief Nursing Officer, Regional Health System',
+  },
+  {
+    quote:
+      'VivantePassport meant we stopped chasing the same license and background-check paperwork every single assignment. It\'s just already there, verified.',
+    name: 'Marcus Ilori',
+    role: 'Director of Clinical Staffing, Home Health Network',
+  },
+  {
+    quote:
+      'VivanteIQ gave our leadership team a real-time view of fill rates we never had before. We stopped finding out about staffing gaps after they became a crisis.',
+    name: 'Priya Anand',
+    role: 'VP of Operations, Skilled Nursing Group',
+  },
+  {
+    quote:
+      "The chat-based intake for new requirements is the difference between our managers actually using the system and going around it.",
+    name: 'Jordan Alvarez',
+    role: 'Staffing Manager, Hospice Care Partners',
+  },
+  {
+    quote:
+      'Onboarding took an afternoon, not a quarter. We were posting real requirements and reviewing matches the same week.',
+    name: 'Renee Castillo',
+    role: 'Administrator, Behavioral Health Center',
+  },
 ];
 
 const WHY_CHECKLIST = [
@@ -91,11 +146,11 @@ export function LandingPage() {
                     <img
                       src={p.headshot}
                       alt=""
-                      className={`absolute -top-[30px] -right-[30px] w-[120px] h-[120px] rounded-full object-cover border-4 bg-white shadow-md ${p.ring}`}
+                      className={`absolute -bottom-[30px] -right-[30px] w-[120px] h-[120px] rounded-full object-cover border-4 bg-white shadow-md ${p.ring}`}
                     />
                   ) : (
                     <div
-                      className={`absolute -top-[30px] -right-[30px] w-[120px] h-[120px] rounded-full flex items-center justify-center border-4 bg-white shadow-md ${p.ring}`}
+                      className={`absolute -bottom-[30px] -right-[30px] w-[120px] h-[120px] rounded-full flex items-center justify-center border-4 bg-white shadow-md ${p.ring}`}
                     >
                       <FallbackIcon className={p.color} size={44} strokeWidth={1.5} />
                     </div>
@@ -175,41 +230,53 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Utility link row */}
-      <div className="py-7 px-6 md:px-12 flex items-center justify-center gap-12 bg-gray">
-        <a href="#how-it-works" className="text-xl font-bold text-navy no-underline hover:text-teal">
-          How it Works?
-        </a>
-        <a href="#faqs" className="text-xl font-bold text-navy no-underline hover:text-teal">
-          FAQs
-        </a>
-        <a
-          href="#see-for-yourself"
-          className="text-xl font-bold text-navy no-underline hover:text-teal"
-        >
-          See For Yourself
-        </a>
-      </div>
-
-      {/* Built for Healthcare */}
+      {/* Stepped hiring flow (replaces the old "Built for Healthcare" benefits grid) */}
       <section className="py-16 px-6 md:px-12">
         <div className="max-w-[1320px] mx-auto">
-          <div className="text-6xl font-extrabold text-navy mb-8">
-            Built for Healthcare. Designed for Impact.
+          <div className="text-6xl font-extrabold text-navy mb-3">
+            How Hiring Works on VivanteCare.
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
-            {BENEFITS.map((b) => (
-              <div key={b.title} className="text-center">
-                <div className="w-[86px] h-[62px] bg-teal/10 mx-auto mb-3 flex items-center justify-center">
-                  <b.icon className="text-teal" size={22} strokeWidth={1.8} />
+          <p className="text-xl text-muted mb-12 max-w-[720px]">
+            From onboarding to filled shifts — five steps, one platform.
+          </p>
+
+          <div className="flex flex-col md:flex-row items-start">
+            {HIRING_STEPS.map((s, i) => (
+              <div key={s.step} className="flex md:flex-1">
+                <div className="flex md:flex-col items-start md:items-center gap-4 md:gap-3 text-left md:text-center">
+                  <div className="w-14 h-14 rounded-full bg-teal text-white flex items-center justify-center text-xl font-extrabold shrink-0">
+                    {s.step}
+                  </div>
+                  <div className="md:px-2">
+                    <div className="text-lg font-bold text-navy mb-1">{s.title}</div>
+                    <div className="text-sm text-muted leading-relaxed md:max-w-[170px]">{s.desc}</div>
+                  </div>
                 </div>
-                <div className="text-lg font-bold text-navy mb-1">{b.title}</div>
-                <div className="text-base text-muted leading-relaxed">{b.desc}</div>
+                {i < HIRING_STEPS.length - 1 && (
+                  <div className="hidden md:block flex-1 h-[2px] bg-teal/30 mt-7 mx-2" />
+                )}
               </div>
             ))}
           </div>
+
+          <Card accent="navy" className="mt-14 flex items-start sm:items-center gap-5 flex-wrap sm:flex-nowrap">
+            <BrainCircuit className="text-navy shrink-0" size={36} strokeWidth={1.5} />
+            <div>
+              <div className="text-xl font-extrabold text-navy mb-1.5">
+                How VivanteIQ™ Helps
+              </div>
+              <p className="text-base text-charcoal/70 leading-relaxed max-w-[760px]">
+                VivanteIQ sits across this entire flow — surfacing real-time fill rates, match
+                quality, and workforce trends at every step, so your team makes faster, smarter
+                hiring decisions instead of guessing.
+              </p>
+            </div>
+          </Card>
         </div>
       </section>
+
+      {/* Testimonials */}
+      <TestimonialsSection />
 
       {/* Why choose */}
       <section id="see-for-yourself" className="bg-graytint py-12 px-6 md:px-12">
@@ -235,5 +302,80 @@ export function LandingPage() {
         </div>
       </section>
     </PageShell>
+  );
+}
+
+function TestimonialsSection() {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActive((i) => (i + 1) % TESTIMONIALS.length);
+    }, 6000);
+    return () => clearInterval(id);
+  }, []);
+
+  function go(delta: number) {
+    setActive((i) => (i + delta + TESTIMONIALS.length) % TESTIMONIALS.length);
+  }
+
+  return (
+    <section className="bg-gray py-16 px-6 md:px-12">
+      <div className="max-w-[860px] mx-auto text-center">
+        <div className="text-4xl font-extrabold text-navy mb-10">
+          What Healthcare Organizations Are Saying
+        </div>
+
+        <div className="relative">
+          <div className="overflow-hidden">
+            <div
+              className="flex transition-transform duration-500 ease-out"
+              style={{ transform: `translateX(-${active * 100}%)` }}
+            >
+              {TESTIMONIALS.map((t) => (
+                <div key={t.name} className="w-full shrink-0 px-2">
+                  <Card accent="neutral" className="py-10">
+                    <Quote className="text-teal mx-auto mb-4" size={28} strokeWidth={1.8} />
+                    <p className="text-xl text-charcoal leading-relaxed italic mb-6">
+                      &ldquo;{t.quote}&rdquo;
+                    </p>
+                    <div className="text-md font-bold text-navy">{t.name}</div>
+                    <div className="text-sm text-muted">{t.role}</div>
+                  </Card>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            aria-label="Previous testimonial"
+            onClick={() => go(-1)}
+            className="hidden sm:flex absolute top-1/2 -translate-y-1/2 -left-5 w-10 h-10 items-center justify-center bg-white border border-charcoal/15 text-navy hover:border-navy transition-colors"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <button
+            aria-label="Next testimonial"
+            onClick={() => go(1)}
+            className="hidden sm:flex absolute top-1/2 -translate-y-1/2 -right-5 w-10 h-10 items-center justify-center bg-white border border-charcoal/15 text-navy hover:border-navy transition-colors"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+
+        <div className="flex items-center justify-center gap-2 mt-6">
+          {TESTIMONIALS.map((t, i) => (
+            <button
+              key={t.name}
+              aria-label={`Show testimonial ${i + 1}`}
+              onClick={() => setActive(i)}
+              className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                i === active ? 'bg-teal' : 'bg-charcoal/20'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

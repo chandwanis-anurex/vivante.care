@@ -4,8 +4,8 @@ import { useSession } from '@/hooks/useSession';
 const NAV_ITEMS = [
   { label: 'Home', href: '/' },
   { label: 'What is VivanteCare?', href: '/#how-it-works' },
-  { label: 'Schedule a Demo', href: '/#book-a-call' },
-  { label: 'Call Us', href: 'tel:+18778442273' },
+  { label: 'See a Demo', href: '/#book-a-call' },
+  { label: 'Get Started', href: '/login' },
 ];
 
 export function Header() {
@@ -18,7 +18,7 @@ export function Header() {
   }
 
   return (
-    <header className="border-b border-navy/10 bg-white">
+    <header className="border-b border-navy/10 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-400">
       <div className="pl-10 pr-6 md:pr-12 py-4 flex items-center justify-between gap-6">
         <Link to="/" className="flex items-center shrink-0">
           <img
@@ -38,7 +38,7 @@ export function Header() {
             <a
               key={item.label}
               href={item.href}
-              className="text-md font-semibold text-charcoal/80 hover:text-teal transition-colors whitespace-nowrap"
+              className="text-xl font-semibold text-charcoal/80 hover:text-teal transition-colors whitespace-nowrap"
             >
               {item.label}
             </a>
