@@ -1,12 +1,13 @@
 import type { HTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-type Accent = 'navy' | 'teal' | 'purple' | 'neutral';
+type Accent = 'navy' | 'teal' | 'purple' | 'cyan' | 'neutral';
 
 const accentBorder: Record<Accent, string> = {
   navy: 'border-navy/30 bg-navy/[0.04]',
   teal: 'border-teal/30 bg-teal/[0.05]',
   purple: 'border-purple/30 bg-purple/[0.05]',
+  cyan: 'border-cyan/30 bg-cyan/[0.05]',
   neutral: 'border-charcoal/15 bg-white',
 };
 

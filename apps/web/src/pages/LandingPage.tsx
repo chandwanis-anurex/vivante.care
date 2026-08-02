@@ -1,19 +1,10 @@
+import { Link } from 'react-router-dom';
 import { PageShell } from '@/components/layout/PageShell';
 import { Card } from '@/components/ui/Card';
+import { PRODUCTS } from '@/lib/products';
 import {
-  Share2,
-  Users,
-  Calendar,
-  Zap,
-  CreditCard,
-  ShieldCheck,
-  FileText,
-  UserCheck,
-  BarChart3,
-  LayoutDashboard,
-  HeartPulse,
-  TrendingUp,
   Radar,
+  ShieldCheck,
   HeartHandshake,
   Target,
   PiggyBank,
@@ -22,57 +13,6 @@ import {
   Gauge,
   Clock,
 } from 'lucide-react';
-
-const PRODUCTS = [
-  {
-    name: 'VivanteHaaS™',
-    tagline: 'AI-Powered Staffing & Matching',
-    accent: 'teal' as const,
-    color: 'text-teal',
-    ring: 'border-teal',
-    headshot: '/images/headshot-haas.png',
-    features: [
-      { icon: Share2, label: 'AI Matching' },
-      { icon: Users, label: 'Staffing' },
-      { icon: Calendar, label: 'Scheduling' },
-      { icon: Zap, label: 'Rapid Response' },
-    ],
-    closingLine: 'Find the right clinician.',
-    closingHighlight: 'Fill the right shift. Faster.',
-  },
-  {
-    name: 'VivantePassport™',
-    tagline: 'Verified Digital Identity',
-    accent: 'purple' as const,
-    color: 'text-purple',
-    ring: 'border-purple',
-    headshot: '/images/headshot-passport.jpg',
-    features: [
-      { icon: CreditCard, label: 'Credentials' },
-      { icon: ShieldCheck, label: 'Compliance' },
-      { icon: FileText, label: 'Licenses' },
-      { icon: UserCheck, label: 'Background Verification' },
-    ],
-    closingLine: 'One verified profile.',
-    closingHighlight: 'Any organization. Every time.',
-  },
-  {
-    name: 'VivanteIQ™',
-    tagline: 'Executive Workforce Intelligence',
-    accent: 'navy' as const,
-    color: 'text-navy',
-    ring: 'border-navy',
-    headshot: '/images/headshot-iq.jpg',
-    features: [
-      { icon: BarChart3, label: 'Analytics' },
-      { icon: LayoutDashboard, label: 'Executive Dashboard' },
-      { icon: HeartPulse, label: 'Workforce Health' },
-      { icon: TrendingUp, label: 'Forecasting' },
-    ],
-    closingLine: 'Turn workforce data',
-    closingHighlight: 'into smarter decisions.',
-  },
-];
 
 const DASHBOARD_STATS = [
   { icon: ClipboardCheck, value: '126', label: 'Open Shifts' },
@@ -130,7 +70,7 @@ export function LandingPage() {
       <div className="flex items-center gap-4 max-w-[1000px] mx-auto px-6 md:px-12 py-10">
         <div className="flex-1 h-[3px] bg-charcoal/10" />
         <div className="text-3xl font-bold text-navy whitespace-nowrap">
-          Three Intelligent Products. One Unified Platform.
+          Four Intelligent Products. One Unified Platform.
         </div>
         <div className="flex-1 h-[3px] bg-charcoal/10" />
       </div>
@@ -138,34 +78,49 @@ export function LandingPage() {
       {/* Product ecosystem */}
       <section id="how-it-works" className="max-w-[1320px] mx-auto px-6 md:px-12 pb-14">
         <div className="flex flex-col md:flex-row items-stretch gap-0">
-          {PRODUCTS.map((p, i) => (
+          {PRODUCTS.map((p, i) => {
+            const FallbackIcon = p.features[0].icon;
+            return (
             <div key={p.name} className="flex items-center flex-1">
-              <Card accent={p.accent} className="relative flex-1 min-w-0 h-full flex flex-col">
-                <img
-                  src={p.headshot}
-                  alt=""
-                  className={`absolute -top-[30px] -right-[30px] w-[120px] h-[120px] rounded-full object-cover border-4 bg-white shadow-md ${p.ring}`}
-                />
-                <div className={`text-5xl font-extrabold ${p.color}`}>{p.name}</div>
-                <div className="text-base text-muted mb-4 mt-1">{p.tagline}</div>
-                <div className="flex flex-col gap-2.5 mb-4">
-                  {p.features.map((f) => (
+              <Link to={`/products/${p.slug}`} className="flex-1 min-w-0 h-full">
+                <Card
+                  accent={p.accent}
+                  className="relative h-full flex flex-col hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  {p.headshot ? (
+                    <img
+                      src={p.headshot}
+                      alt=""
+                      className={`absolute -top-[30px] -right-[30px] w-[120px] h-[120px] rounded-full object-cover border-4 bg-white shadow-md ${p.ring}`}
+                    />
+                  ) : (
                     <div
-                      key={f.label}
-                      className="flex items-center gap-2.5 text-md font-semibold text-navy"
+                      className={`absolute -top-[30px] -right-[30px] w-[120px] h-[120px] rounded-full flex items-center justify-center border-4 bg-white shadow-md ${p.ring}`}
                     >
-                      <f.icon className={p.color} size={20} strokeWidth={1.8} />
-                      {f.label}
+                      <FallbackIcon className={p.color} size={44} strokeWidth={1.5} />
                     </div>
-                  ))}
-                </div>
-                <div className="mt-auto pt-4 max-w-[60%]">
-                  <div className="text-base text-muted leading-relaxed">{p.closingLine}</div>
-                  <div className={`text-base font-bold leading-relaxed ${p.color}`}>
-                    {p.closingHighlight}
+                  )}
+                  <div className={`text-4xl font-extrabold ${p.color}`}>{p.name}</div>
+                  <div className="text-base text-muted mb-4 mt-1">{p.tagline}</div>
+                  <div className="flex flex-col gap-2.5 mb-4">
+                    {p.features.map((f) => (
+                      <div
+                        key={f.label}
+                        className="flex items-center gap-2.5 text-md font-semibold text-navy"
+                      >
+                        <f.icon className={p.color} size={20} strokeWidth={1.8} />
+                        {f.label}
+                      </div>
+                    ))}
                   </div>
-                </div>
-              </Card>
+                  <div className="mt-auto pt-4 max-w-[70%]">
+                    <div className="text-base text-muted leading-relaxed">{p.closingLine}</div>
+                    <div className={`text-base font-bold leading-relaxed ${p.color}`}>
+                      {p.closingHighlight}
+                    </div>
+                  </div>
+                </Card>
+              </Link>
               {i < PRODUCTS.length - 1 && (
                 <div
                   className={`hidden md:flex items-center justify-center w-11 h-11 border-2 border-current -mx-3.5 bg-white relative z-10 shrink-0 ${p.color}`}
@@ -174,7 +129,8 @@ export function LandingPage() {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

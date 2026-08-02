@@ -1,37 +1,28 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
 import { PageShell } from '@/components/layout/PageShell';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { setSession } from '@/hooks/useSession';
-import { useOrgRegistry } from '@/hooks/useOrgRegistry';
-import { getRoleHome } from '@/lib/roleHome';
+import { useSession } from '@/hooks/useSession';
 import type { UserRole } from '@/types';
 import { Building2, UserRound } from 'lucide-react';
 
 export function LoginPage() {
-  const { organizations } = useOrgRegistry();
-  // Only fully activated orgs (verified + subscribed) can log in — a
-  // registration mid-flow, blocked, or Enterprise-pending org won't
-  // appear here. See RegisterOrgPage.tsx / hooks/useOrgRegistry.ts.
-  const loginableOrgs = organizations.filter((o) => o.verificationStatus === 'verified' && o.subscriptionPlan);
-
+  const { setSession } = useSession();
   const [selected, setSelected] = useState<UserRole | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [orgName, setOrgName] = useState(() => loginableOrgs[0]?.name ?? '');
-  const navigate = useNavigate();
+  const [orgName, setOrgName] = useState('');
+  const [submitted, setSubmitted] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!selected) return;
-    // TODO: replace with real POST /api/auth/login against apps/server
     setSession({
       role: selected,
       name: selected === 'org' ? 'Jordan Alvarez' : 'Taylor Brooks',
       orgName: selected === 'org' ? orgName : undefined,
     });
-    navigate(getRoleHome(selected));
+    setSubmitted(true);
   }
 
   return (
@@ -44,23 +35,24 @@ export function LoginPage() {
           How are you using VivanteCare?
         </h1>
 
-        {!selected ? (
+        {submitted ? (
+          <Card accent="teal" className="text-center py-12">
+            <p className="text-xl font-bold text-charcoal mb-2">You're signed in.</p>
+            <p className="text-base text-charcoal/70">
+              Full dashboards are being rebuilt — check back soon.
+            </p>
+          </Card>
+        ) : !selected ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <Card accent="navy" className="h-full">
-              <button onClick={() => setSelected('org')} className="text-left w-full hover:opacity-80 transition-opacity">
+            <button onClick={() => setSelected('org')} className="text-left">
+              <Card accent="navy" className="h-full hover:bg-navy/[0.06] transition-colors cursor-pointer">
                 <Building2 className="text-navy mb-4" size={28} strokeWidth={1.75} />
                 <div className="text-2xl font-bold text-charcoal mb-2">Healthcare Org Login</div>
                 <p className="text-base text-charcoal/70">
                   Post requirements, review matches, and manage your Passport Vault.
                 </p>
-              </button>
-              <Link
-                to="/register"
-                className="inline-block text-sm font-semibold text-teal underline mt-3"
-              >
-                New organization? Register here
-              </Link>
-            </Card>
+              </Card>
+            </button>
 
             <button onClick={() => setSelected('worker')} className="text-left">
               <Card accent="teal" className="h-full hover:bg-teal/[0.08] transition-colors cursor-pointer">
@@ -91,17 +83,14 @@ export function LoginPage() {
                   <label className="block text-sm font-semibold text-charcoal/70 mb-1.5">
                     Organization
                   </label>
-                  <select
+                  <input
+                    type="text"
+                    required
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
-                    className="w-full border border-charcoal/20 px-3 py-2.5 text-base focus:border-navy outline-none bg-white"
-                  >
-                    {loginableOrgs.map((o) => (
-                      <option key={o.id} value={o.name}>
-                        {o.name}
-                      </option>
-                    ))}
-                  </select>
+                    className="w-full border border-charcoal/20 px-3 py-2.5 text-base focus:border-navy outline-none"
+                    placeholder="Your organization name"
+                  />
                 </div>
               )}
               <div>

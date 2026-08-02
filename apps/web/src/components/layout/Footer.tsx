@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { ShieldCheck, Eye, Phone, Mail, Globe, QrCode } from 'lucide-react';
 
 export function Footer() {
@@ -62,6 +63,9 @@ export function Footer() {
             &copy; {new Date().getFullYear()} VivanteCare. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm text-white/50">
+            <Link to="/about" className="hover:text-white transition-colors">
+              About Us
+            </Link>
             <a href="#" className="hover:text-white transition-colors">
               Privacy Policy
             </a>

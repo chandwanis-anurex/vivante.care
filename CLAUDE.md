@@ -10,7 +10,56 @@ npm run build:server
 npm run lint          # currently broken — no ESLint config committed (pre-existing, unrelated to landing page work)
 ```
 
-## Landing page rebrand (this session)
+## Major overhaul: stripped to landing + login + product pages (latest session)
+
+**Everything below this section describes code that no longer exists.**
+Kept for history — none of it describes the live app anymore. The org,
+worker, and staffing-agency (admin) workflows, and every hook/lib that
+supported them (`useScheduleStore`, `useOrgRegistry`, the matching
+engine, mock data, org registration, etc.), were deleted wholesale — a
+deliberate clean-slate decision, not an accident. Those workflows will
+be rebuilt from BDD documents the user is providing separately, one
+workflow at a time. Until then, `apps/web/src` only has:
+
+- `App.tsx` — routes: `/` (landing), `/login`, `/about`, `/products/:slug`.
+- `pages/LandingPage.tsx`, `pages/LoginPage.tsx`, `pages/AboutPage.tsx`
+  (placeholder — real content pending), `pages/ProductDetailPage.tsx`
+  (shared "how it works" page for all four products, driven by
+  `lib/products.ts`).
+- `components/layout/{Header,Footer,PageShell}.tsx`,
+  `components/ui/{Button,Card}.tsx`, `hooks/useSession.ts`, `lib/utils.ts`
+  — the only surviving shared infrastructure.
+
+**`Header.tsx`** now carries a standing top nav (Home / What is
+VivanteCare? / Schedule a Demo / Call Us / Login Now) on every page — no
+more landing-page-only CTA branching, no more role-based logo destination
+(logo always links to `/`, since `lib/roleHome.ts` is gone). Still
+session-aware: shows "Signed in as X · Logout" if `useSession` has a
+session, else "Login Now".
+
+**`LoginPage.tsx`** still has the real org/worker role-picker + form, and
+still calls `setSession` on submit — but there's nowhere to navigate to,
+so it shows an inline "you're signed in, dashboards are being rebuilt"
+message instead. The org-name field is a plain text input now (no
+`useOrgRegistry` to pick from), and the "register here" link is gone
+(`/register` was deleted with the org flow).
+
+**Fourth product, VivanteHomeCare™** (`lib/products.ts`, `slug: 'homecare'`):
+home-caregiver training/certification for a family member — every US
+state has its own certification (NJ's is the Homemaker Health Aide
+certification). Its actual program isn't built here; it lives on a
+separate site that doesn't exist yet. No `externalUrl` is set for it
+deliberately — don't invent one. `ProductDetailPage.tsx` shows a
+"Coming Soon" placeholder for it instead of a real/dead link. It also has
+no `headshot` (none supplied) — the landing tile and detail page both
+fall back to rendering its first feature's icon in the photo-circle
+position instead.
+
+**`Card.tsx`** gained a `cyan` accent (token already existed, previously
+only used for footer icon accents) specifically for VivanteHomeCare's
+tile/detail page.
+
+## Landing page rebrand (from an earlier session — see note above)
 
 The marketing site was rebuilt to match a design pulled from Claude Design
 (`claude.ai/design`, project "Interactive Brand Prototype Tool",
