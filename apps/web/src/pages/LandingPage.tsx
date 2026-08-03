@@ -24,26 +24,21 @@ const DASHBOARD_STATS = [
 const HIRING_STEPS = [
   {
     step: 1,
-    title: 'Onboard',
-    desc: 'Healthcare Org is onboarded on the VivanteCare platform.',
-  },
-  {
-    step: 2,
     title: 'Add a Requirement',
     desc: 'Easily add a staffing requirement using a friendly chat interface.',
   },
   {
-    step: 3,
+    step: 2,
     title: 'AI Matching',
     desc: 'VivanteHaaS AI engine matches the requirement to screened candidates.',
   },
   {
-    step: 4,
+    step: 3,
     title: 'Review & Interview',
     desc: 'Review VivantePassports of qualified staff and interview them.',
   },
   {
-    step: 5,
+    step: 4,
     title: 'Hire & Manage',
     desc: 'Hire the right fit and manage shifts, all in one place.',
   },
@@ -237,7 +232,7 @@ export function LandingPage() {
             How Hiring Works on VivanteCare.
           </div>
           <p className="text-xl text-muted mb-12 max-w-[720px]">
-            From onboarding to filled shifts — five steps, one platform.
+            From requirement to filled shift — four steps, one platform.
           </p>
 
           <div className="flex flex-col md:flex-row items-start">

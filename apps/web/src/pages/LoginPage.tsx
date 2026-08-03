@@ -28,6 +28,27 @@ export function LoginPage() {
 
   return (
     <PageShell>
+      {/* Hero */}
+      <section className="relative w-full min-h-[420px] overflow-hidden bg-navy">
+        <img
+          src="/images/login-security-banner.png"
+          alt=""
+          className="absolute inset-y-0 right-0 w-full sm:w-1/2 h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/0" />
+        <div className="relative z-10 max-w-[520px] p-10 py-16">
+          <div className="text-xs font-bold tracking-wide text-teal uppercase mb-3">
+            Secure Access
+          </div>
+          <h1 className="text-6xl font-extrabold text-white leading-tight mb-4">
+            Sign In to <span className="text-teal">VivanteCare</span>
+          </h1>
+          <p className="text-xl leading-relaxed text-white/80 max-w-[420px]">
+            Your credentials, verified and protected at every step.
+          </p>
+        </div>
+      </section>
+
       <div className="max-w-[560px] mx-auto px-6 py-20">
         <div className="text-xs font-bold tracking-wide text-teal uppercase mb-3 text-center">
           Sign In
