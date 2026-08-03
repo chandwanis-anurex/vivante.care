@@ -12,6 +12,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Quote,
+  Sparkles,
+  ShieldCheck,
+  CalendarCheck,
+  Eye,
 } from 'lucide-react';
 
 const DASHBOARD_STATS = [
@@ -19,6 +23,13 @@ const DASHBOARD_STATS = [
   { icon: CheckCircle2, value: '1,048', label: 'Filled Shifts' },
   { icon: Gauge, value: '97%', label: 'Fill Rate' },
   { icon: Clock, value: '18.4 hrs', label: 'Avg. Time to Fill' },
+];
+
+const HERO_HIGHLIGHTS = [
+  { icon: Sparkles, label: 'AI Powered' },
+  { icon: ShieldCheck, label: 'Verified Workforce' },
+  { icon: CalendarCheck, label: 'Easier Shift Fills' },
+  { icon: Eye, label: 'Better Observability' },
 ];
 
 const HIRING_STEPS = [
@@ -113,6 +124,15 @@ export function LandingPage() {
             insights&mdash;so healthcare organizations can move faster, stay compliant, and
             deliver exceptional care.
           </p>
+
+          <div className="flex flex-wrap gap-x-8 gap-y-4 mt-8">
+            {HERO_HIGHLIGHTS.map((h) => (
+              <div key={h.label} className="flex items-center gap-2.5">
+                <h.icon className="text-teal" size={22} strokeWidth={1.8} />
+                <span className="text-md font-bold text-navy">{h.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
